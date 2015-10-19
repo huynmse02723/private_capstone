@@ -3,7 +3,7 @@ var service = angular.module("DDLService", []);
 var directive = angular.module("DDLDirective", []);
 var app = angular.module("ClientApp", ["ngRoute", "ngAnimate", "ngSanitize", "DDLService",
     "DDLDirective", 'angular-loading-bar', 'textAngular', 'toastr', 'ui.bootstrap', 'monospaced.elastic',
-    'datatables', 'datatables.bootstrap', 'oitozero.ngSweetAlert', 'ui.bootstrap.tabs']);
+    'datatables', 'datatables.bootstrap', 'oitozero.ngSweetAlert']);
 
 // Show Routing.
 app.config(["$routeProvider", function ($routeProvider) {
@@ -82,12 +82,12 @@ app.config(["$routeProvider", function ($routeProvider) {
         controller: "CreateProjectController",
         resolve: {
             categories: ['$rootScope', '$route', '$q', 'CategoryService', 'CommmonService', function ($rootScope, $route, $q, CategoryService, CommmonService) {
-                var promise = CategoryService.getCategories();
+                var promise = CategoryService.GetCategoriesForCreate();
                 return CommmonService.checkHttpResult($q, promise, $rootScope.BaseUrl);
             }]
         }
     });
-    $routeProvider.when("/project/edit/:id",
+    $routeProvider.when("/project/edit/:code",
         {
             templateUrl: "/ClientPartial/EditProject",
             controller: "EditProjectController",
@@ -97,7 +97,7 @@ app.config(["$routeProvider", function ($routeProvider) {
                     return CommmonService.checkHttpResult($q, promise, $rootScope.BaseUrl);
                 }],
                 project: ['$rootScope', '$route', '$q', 'ProjectService', 'CommmonService', function ($rootScope, $route, $q, ProjectService, CommmonService) {
-                    var promise = ProjectService.getProject($route.current.params.id);
+                    var promise = ProjectService.getProject($route.current.params.code);
                     return CommmonService.checkHttpResult($q, promise, $rootScope.BaseUrl);
                 }],
             }
@@ -136,7 +136,41 @@ app.config(["$routeProvider", function ($routeProvider) {
                 }]
             }
         });
+  $routeProvider.when("/project/backedProject",
+       {
+           templateUrl: "ClientPartial/BackedProject",
+           controller: 'BackedProjectController',
+            resolve: {
+                listsBacked: ['$rootScope', '$route', '$q', 'ProjectService', 'CommmonService', function ($rootScope, $route, $q, ProjectService, CommmonService) {
+                    var promise = ProjectService.getBackedProject();
+                    return CommmonService.checkHttpResult($q, promise, $rootScope.BaseUrl);
+                }]
+            }
+       });
 
+    $routeProvider.when("/project/starredProject",
+       {
+           templateUrl: "ClientPartial/StarredProject",
+           controller: 'StarredProjectController',
+           resolve: {
+               project: ['$rootScope', '$route', '$q', 'ProjectService', 'CommmonService', function ($rootScope, $route, $q, ProjectService, CommmonService) {
+                   var promise = ProjectService.getStarredProject();
+                   return CommmonService.checkHttpResult($q, promise, $rootScope.BaseUrl);
+               }]
+           }
+       });
+
+    $routeProvider.when("/project/createdProject",
+      {
+          templateUrl: "ClientPartial/CreatedProject",
+          controller: 'CreatedProjectController',
+          resolve: {
+              projects: ['$rootScope', '$route', '$q', 'ProjectService', 'CommmonService', function ($rootScope, $route, $q, ProjectService, CommmonService) {
+                  var promise = ProjectService.getCreatedProject();
+                  return CommmonService.checkHttpResult($q, promise, $rootScope.BaseUrl);
+              }]
+          }
+      });
     $routeProvider.otherwise({
         redirectTo: "/"
     });
@@ -151,7 +185,7 @@ app.config(["$routeProvider", function ($routeProvider) {
     }]);
 }]);
 
-app.run(['$rootScope', '$window', '$anchorScroll', 'UserService', function ($rootScope, $window, $anchorScroll, UserService) {
+app.run(['$rootScope', '$window', '$anchorScroll', 'UserService', 'DTDefaultOptions', function ($rootScope, $window, $anchorScroll, UserService, DTDefaultOptions) {
     $rootScope.$on('$routeChangeError', function (e, curr, prev) {
         e.preventDefault();
     });
@@ -159,6 +193,31 @@ app.run(['$rootScope', '$window', '$anchorScroll', 'UserService', function ($roo
     // Scroll top when route change.
     $rootScope.$on("$locationChangeStart", function () {
         $anchorScroll();
+    });
+
+    // Set language for table
+    DTDefaultOptions.setLanguage({
+        "sEmptyTable": "Không có dữ liệu",
+        "sInfo": "Hiển thị từ _START_ tới _END_ của _TOTAL_",
+        "sInfoEmpty": "Hiển thị từ 0 tới 0 của 0",
+        "sInfoFiltered": "(filtered from _MAX_ total entries)",
+        "sInfoPostFix": "",
+        "sInfoThousands": ",",
+        "sLengthMenu": "Hiển thị _MENU_",
+        "sLoadingRecords": "Đang tải...",
+        "sProcessing": "Đang xử lí...",
+        "sSearch": "Tìm kiếm:",
+        "sZeroRecords": "Không tìm thấy",
+        "oPaginate": {
+            "sFirst": "Đầu",
+            "sLast": "Cuối",
+            "sNext": "Tiếp",
+            "sPrevious": "Trước"
+        },
+        "oAria": {
+            "sSortAscending": ": activate to sort column ascending",
+            "sSortDescending": ": activate to sort column descending"
+        }
     });
 
     // Base Url of web app.
