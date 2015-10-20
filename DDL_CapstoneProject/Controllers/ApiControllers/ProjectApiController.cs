@@ -26,6 +26,7 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
         {
             int id;
             var currentUser = getCurrentUser();
+            string projectCode = "";
 
             if (currentUser == null)
             {
@@ -43,16 +44,16 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
                 return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
             }
 
-            //try
-            //{
-            newProject.CreatorID = currentUser.DDL_UserID;
-            var project = ProjectRepository.Instance.CreatProject(newProject);
-            //}
-            //catch (Exception)
-            //{
-            //    return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
-            //}
-            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Message = "", Type = "", Data = project.ProjectCode });
+            try
+            {
+                newProject.CreatorID = currentUser.DDL_UserID;
+                projectCode = ProjectRepository.Instance.CreatProject(newProject);
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Message = "", Type = "", Data = projectCode });
         }
 
         // PUT: api/ProjectApi/EditProject  
@@ -142,13 +143,6 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
         {
             ProjectEditDTO project = null;
 
-            var currentUser = getCurrentUser();
-
-            if (currentUser == null)
-            {
-                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
-            }
-
             if (!ModelState.IsValid)
             {
                 return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
@@ -161,7 +155,7 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
 
             try
             {
-                project = ProjectRepository.Instance.GetProjectBasic(code, currentUser.DDL_UserID, currentUser.UserType);
+                project = ProjectRepository.Instance.GetProjectBasic(code, User.Identity.Name);
                 if (project.ImageUrl != string.Empty)
                 {
                     project.ImageUrl = DDLConstants.FileType.PROJECT + project.ImageUrl;
@@ -221,6 +215,32 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
             try
             {
                 rewardPkg = RewardPkgRepository.Instance.GetRewardPkg(id);
+            }
+            catch (Exception)
+            {
+
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = rewardPkg });
+        }
+
+        // GET: api/ProjectApi/GetRewardPkgByCode/:code
+        [HttpGet]
+        [ResponseType(typeof(RewardPkgDTO))]
+        public IHttpActionResult GetRewardPkgByCode(string code)
+        {
+            // Check authen.
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            List<RewardPkgDTO> rewardPkg;
+
+            try
+            {
+                rewardPkg = RewardPkgRepository.Instance.GetRewardPkgByCode(code);
             }
             catch (Exception)
             {
@@ -741,6 +761,35 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
 
             return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Message = DDLConstants.HttpMessageType.SUCCESS, Type = "", Data = project });
         }
+
+        // POST: api/ProjectApi/BackProject
+        [ResponseType(typeof(QuestionDTO))]
+        [HttpPost]
+        public IHttpActionResult BackProject(ProjectBackDTO backingData)
+        {
+            string projectCode;
+
+            // Check authen.
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            try
+            {
+                projectCode = ProjectRepository.Instance.BackProject(backingData);
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Message = "", Type = "", Data = projectCode });
+        }
         #endregion
 
 
@@ -812,27 +861,269 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
             });
         }
 
-        //  17/10/2015 - MaiCTP - Get BAckedProject
-        public IHttpActionResult GetBackedProject()
+        // GET: api/ProjectApi/GetCommentList?code=code
+        [HttpGet]
+        [ResponseType(typeof(CommentDTO))]
+        public IHttpActionResult GetCommentList(string code, string lastDateTime = "")
         {
-            var listBacked = ProjectRepository.Instance.GetBackedProject(User.Identity.Name);
-            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = listBacked });
+            List<CommentDTO> result = null;
+            var datetime = !string.IsNullOrEmpty(lastDateTime) ? DateTime.Parse(lastDateTime) : DateTime.Now;
+            try
+            {
+                // Get current user name.
+                var currentUser = User.Identity != null ? User.Identity.Name : null;
+                result = ProjectRepository.Instance.GetListComment(code, datetime, currentUser);
+            }
+            catch (KeyNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Dự án không tồn tại!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+            return Ok(new HttpMessageDTO
+            {
+                Status = DDLConstants.HttpMessageType.SUCCESS,
+                Message = "",
+                Type = "",
+                Data = result
+            });
+        }
+
+        // GET: api/ProjectApi/GetUpdateLogList?code=code
+        [HttpGet]
+        [ResponseType(typeof(CommentDTO))]
+        public IHttpActionResult GetUpdateLogList(string code)
+        {
+            List<UpdateLogDTO> result = null;
+            try
+            {
+                // Get current user name.
+                var currentUser = User.Identity != null ? User.Identity.Name : null;
+                result = ProjectRepository.Instance.GetListUpdateLog(code, currentUser);
+            }
+            catch (KeyNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Dự án không tồn tại!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+            return Ok(new HttpMessageDTO
+            {
+                Status = DDLConstants.HttpMessageType.SUCCESS,
+                Message = "",
+                Type = "",
+                Data = result
+            });
         }
 
 
+        //  17/10/2015 - MaiCTP - Get BAckedProject
+        //public IHttpActionResult GetBackedProject()
+        //{
+        //    var listBacked = ProjectRepository.Instance.GetBackedProject(User.Identity.Name);
+        //    return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = listBacked });
+        //}
+
+        [HttpGet]
+        [ResponseType(typeof(ProjectBasicViewDTO))]
+        public IHttpActionResult GetBackedProject()
+        {
+            List<ProjectBasicViewDTO> listBacked = new List<ProjectBasicViewDTO>();
+
+            var currentUser = getCurrentUser();
+
+            if (currentUser == null)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa đăng nhập", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            try
+            {
+                var ListBacked = ProjectRepository.Instance.GetBackedProject(User.Identity.Name);
+                listBacked = ListBacked;
+                
+            }
+            catch (ProjectNotFoundException)
+            {
+
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa ủng hộ dự án nào!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = listBacked });
+        }
+
         //  18/10/2015 - MaiCTP - Get StarredProject
+        [HttpGet]
+        [ResponseType(typeof(ProjectBasicViewDTO))]
         public IHttpActionResult GetStarredProject()
         {
-            var listStarred = ProjectRepository.Instance.GetStarredProject(User.Identity.Name);
+            List<ProjectBasicViewDTO> listStarred = new List<ProjectBasicViewDTO>();
+
+            var currentUser = getCurrentUser();
+
+            if (currentUser == null)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa đăng nhập", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            try
+            {
+                var ListStarred = ProjectRepository.Instance.GetStarredProject(User.Identity.Name);
+                listStarred = ListStarred;
+
+            }
+            catch (ProjectNotFoundException)
+            {
+
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa theo dõi dự án nào!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
             return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = listStarred });
         }
 
         //  18/10/2015 - MaiCTP - Get CreatedProject
+        [HttpGet]
+        [ResponseType(typeof(ProjectBasicViewDTO))]
         public IHttpActionResult GetCreatedProject()
         {
-            var listCreated = ProjectRepository.Instance.GetCreatedProject(User.Identity.Name);
+            List<ProjectBasicViewDTO> listCreated = new List<ProjectBasicViewDTO>();
+
+            var currentUser = getCurrentUser();
+
+            if (currentUser == null)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa đăng nhập", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+
+            try
+            {
+                var ListCreated = ProjectRepository.Instance.GetCreatedProject(User.Identity.Name);
+                listCreated = ListCreated;
+
+            }
+            catch (ProjectNotFoundException)
+            {
+
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Chưa tạo dự án nào!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
             return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = listCreated });
         }
+
+        [HttpGet]
+        public IHttpActionResult RemindProject(string code)
+        {
+
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+            try
+            {
+                ProjectRepository.Instance.RemindProject(User.Identity.Name, code);
+            }
+            catch (UserNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Bạn chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "" });
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetListBacker(string code)
+        {
+            var listBacker = new List<BackingDTO>();
+            try
+            {
+                listBacker = ProjectRepository.Instance.GetListBacker(code);
+            }
+            catch (UserNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Bạn chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "", Data = listBacker });
+        }
+
+        [HttpGet]
+        public IHttpActionResult ReportProject(string code, string content)
+        {
+
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+            try
+            {
+                ProjectRepository.Instance.ReportProject(User.Identity.Name, code, content);
+            }
+            catch (UserNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Bạn chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "" });
+        }
+
         #region Comment Functions
 
         /// <summary>

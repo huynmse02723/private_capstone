@@ -19,7 +19,7 @@ app.service('ProjectService', function ($http) {
     this.getProjectDetail = function (code) {
         var request = $http({
             method: 'get',
-            url: '/api/ProjectApi/getProjectDetail',
+            url: '/api/ProjectApi/GetProjectDetail',
             params: {
                 code: code
             }
@@ -27,6 +27,49 @@ app.service('ProjectService', function ($http) {
 
         return request;
     }
+
+    // Function to ger a project by ProjectCode
+    this.getUpdateLogList = function (code) {
+        var request = $http({
+            method: 'get',
+            url: '/api/ProjectApi/GetUpdateLogList',
+            params: {
+                code: code
+            }
+        });
+
+        return request;
+    }
+
+
+    // Function to ger a project by ProjectCode
+    this.getCommentList = function (code, lastDatetime) {
+        var request = $http({
+            method: 'get',
+            url: '/api/ProjectApi/GetCommentList',
+            params: {
+                code: code,
+                lastDatetime: lastDatetime
+            }
+        });
+
+        return request;
+    }
+
+    // Function to ger a project by ProjectCode
+    //this.loadMoreComment = function (code, skip, lastDatetime) {
+    //    var request = $http({
+    //        method: 'get',
+    //        url: '/api/ProjectApi/GetMoreComment',
+    //        params: {
+    //            code: code,
+    //            skip: skip,
+    //            lastDatetime: lastDatetime
+    //        }
+    //    });
+
+    //    return request;
+    //}
 
     // Function to create new Project
     this.createProject = function (project) {
@@ -246,6 +289,46 @@ app.service('ProjectService', function ($http) {
         return request;
     }
 
+    // Function to get rewardPkgs by projectCode
+    this.getRewardPkgByCode = function (code) {
+        var request = $http({
+            method: 'get',
+            url: '/api/ProjectApi/GetRewardPkgByCode',
+            params: {
+                code: code
+            }
+        });
+
+        return request;
+    }
+
+    // Function to save backing data
+    var BackData = {};
+
+    this.addBack = function (newBacking) {
+        BackData = newBacking;
+    };
+
+    this.getBack = function () {
+        return BackData;
+    };
+
+    this.return = {
+        addBack: this.addBack,
+        getBack: this.getBack
+    };
+
+    // Function to back project
+    this.backingProject = function (backingData) {
+        var request = $http({
+            method: 'post',
+            url: '/api/ProjectApi/BackProject',
+            data: backingData
+        });
+
+        return request;
+    }
+
     this.GetProjectStatisticList = function () {
         return $http.get('/api/ProjectApi/GetProjectStatisticList');
     };
@@ -346,5 +429,37 @@ app.service('ProjectService', function ($http) {
 
     }
 
+    this.remindProject = function (code) {
+        var request = $http({
+            method: 'get',
+            url: '/api/ProjectApi/RemindProject',
+            params: {
+                code: code
+            }
+        });
+        return request;
+    }
 
+    this.getListBacker = function (code) {
+        var request = $http({
+            method: 'get',
+            url: '/api/ProjectApi/GetListBacker',
+            params: {
+                code: code
+            }
+        });
+        return request;
+    }
+
+    this.reportProject = function (code, reportcontent) {
+        var request = $http({
+            method: 'get',
+            url: '/api/ProjectApi/ReportProject',
+            params: {
+                code: code,
+                content: reportcontent
+            }
+        });
+        return request;
+    }
 });

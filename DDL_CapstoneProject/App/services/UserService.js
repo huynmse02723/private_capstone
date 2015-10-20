@@ -49,7 +49,10 @@ service.service('UserService', function ($http) {
     this.getPublicInformation = function (user) {
         var request = $http({
             method: 'get',
-            url: '/api/UserApi/GetPublicInfo'
+            url: '/api/UserApi/GetPublicInfo',
+            params: {
+                username: user
+            }
         });
         return request;
     }
@@ -78,6 +81,23 @@ service.service('UserService', function ($http) {
             .error(function (resp) {
                 //debugger;
             });
+    }
+
+    this.getEditPassword = function () {
+        var request = $http({
+            method: 'get',
+            url: '/api/UserApi/GetUserPasswordEdit'
+        });
+        return request;
+    }
+
+    this.changepassword = function (newpass) {
+        var request = $http({
+            method: 'post',
+            url: '/api/UserApi/ChangePassword',
+            data: newpass
+        });
+        return request;
     }
 
 });

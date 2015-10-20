@@ -131,7 +131,12 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
             catch (Exception)
             {
 
-                throw;
+                return Ok(new HttpMessageDTO
+                {
+                    Status = DDLConstants.HttpMessageType.ERROR,
+                    Message = "",
+                    Type = DDLConstants.HttpMessageType.BAD_REQUEST
+                });
             }
 
             return Ok(new HttpMessageDTO
@@ -143,14 +148,23 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
             });
         }
 
-        public IHttpActionResult GetPublicInfo()
+        [HttpGet]
+        public IHttpActionResult GetPublicInfo(string username)
         {
+            UserPublicInfoDTO userExist;
             if (!ModelState.IsValid)
             {
                 return Ok(new HttpMessageDTO { Status = "error", Message = "", Type = "Bad-Request" });
             }
-            var userExist = UserRepository.Instance.GetUserPublicInfo(User.Identity.Name);
-            userExist.ProfileImage = DDLConstants.FileType.AVATAR + userExist.ProfileImage;
+            try
+            {
+                userExist = UserRepository.Instance.GetUserPublicInfo(username);
+            }
+            catch (UserNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Không tìm thấy!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            //userExist.ProfileImage = DDLConstants.FileType.AVATAR + userExist.ProfileImage;
             return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "", Data = userExist });
         }
 
@@ -212,6 +226,63 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
                 return Ok(new HttpMessageDTO { Status = "error", Message = "", Type = "Bad-Request" });
             }
             return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "" });
+        }
+
+        public IHttpActionResult GetUserPasswordEdit()
+        {
+            EditPasswordDTO userPass = null;
+            if (!ModelState.IsValid)
+            {
+                return Ok(new HttpMessageDTO { Status = "error", Message = "", Type = "Bad-Request" });
+            }
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+            try
+            {
+                userPass = UserRepository.Instance.GetUserPassword(User.Identity.Name);
+            }
+            catch (UserNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Bạn chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = "error", Message = "", Type = "Bad-Request" });
+            }
+            return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "", Data = userPass });
+        }
+
+
+        public IHttpActionResult ChangePassword(EditPasswordDTO newPass)
+        {
+            var userPass = UserRepository.Instance.GetUserPassword(User.Identity.Name);
+            if (!ModelState.IsValid)
+            {
+                return Ok(new HttpMessageDTO { Status = "error", Message = "", Type = "Bad-Request" });
+            }
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+            }
+            try
+            {
+                Boolean checkpass = UserRepository.Instance.ChangePassword(User.Identity.Name, newPass);
+                if (checkpass == false)
+                {
+                    return Ok(new HttpMessageDTO { Status = "error", Message = "", Type = "Bad-Request" });
+                }
+            }
+            catch (UserNotFoundException)
+            {
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "Bạn chưa đăng nhập!", Type = DDLConstants.HttpMessageType.NOT_FOUND });
+            }
+            catch (Exception)
+            {
+                return Ok(new HttpMessageDTO { Status = "error", Message = "", Type = "Bad-Request" });
+            }
+            return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "", Data = userPass });
         }
 
     }

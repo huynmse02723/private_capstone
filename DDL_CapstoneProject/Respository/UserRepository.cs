@@ -270,11 +270,19 @@ namespace DDL_CapstoneProject.Respository
                                  FacebookUrl = user.UserInfo.FacebookUrl,
                                  LastLogin = user.LastLogin,
                                  ProfileImage = user.UserInfo.ProfileImage,
-                                 CountBackedProject = user.Backings.Count(x => x.User.Username == user.Username),
+                                 CountBackedProject = user.Backings.Count,
+                                 CountCreatedProject = user.CreatedProjects.Count(x => x.Status != DDLConstants.ProjectStatus.DRAFT
+                                             && x.Status != DDLConstants.ProjectStatus.REJECTED
+                                             && x.Status != DDLConstants.ProjectStatus.PENDING),
                                  UserName = user.Username,
-                                 Website = user.UserInfo.Website,
+                                 Website = user.UserInfo.Website
                              };
-            return userPublic.First();
+            if (!userPublic.Any())
+            {
+                throw new UserNotFoundException();
+            }
+
+            return userPublic.FirstOrDefault();
         }
 
         public UserEditInfoDTO GetUserEditInfo(string userName)
@@ -318,6 +326,39 @@ namespace DDL_CapstoneProject.Respository
             userEdit.PhoneNumber = userCurrent.ContactNumber;
 
             db.SaveChanges();
+        }
+
+        public EditPasswordDTO GetUserPassword(string userName)
+        {
+            var userPublic = from user in db.DDL_Users
+                             where user.Username == userName
+                             select new EditPasswordDTO
+                             {
+                                 //CurrentPassword = user.Password,
+                                 Email = user.Email,
+                                 LoginType = user.LoginType
+                             };
+            if (!userPublic.Any())
+            {
+                throw new UserNotFoundException();
+            }
+
+            return userPublic.FirstOrDefault();
+        }
+
+        public Boolean ChangePassword(string userName, EditPasswordDTO newPass)
+        {
+            var userCurrent = db.DDL_Users.FirstOrDefault(x => x.Username.Equals(userName));
+            if (userCurrent.Password == newPass.CurrentPassword)
+            {
+                userCurrent.Password = newPass.NewPassword;
+                db.SaveChanges();
+            }
+            else
+            {
+                return false;
+            }
+            return true;
         }
 
         #endregion
