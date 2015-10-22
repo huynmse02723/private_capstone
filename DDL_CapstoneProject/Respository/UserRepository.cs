@@ -26,14 +26,37 @@ namespace DDL_CapstoneProject.Respository
         #endregion
 
         #region "Methods"
+        #region TrungVN
 
+        public Dictionary<string, List<UserBackInforDTO>> GetUserTop(string categoryid)
+        {
+            categoryid = "|" + categoryid + "|";
+            bool allCategory = false;
+            if (categoryid.ToLower().Contains("all")) allCategory = true;
+            var UserTop = from user in db.DDL_Users
+                          select new UserBackInforDTO
+                          {
+                              Rank = "Rank A",
+                              Name = user.UserInfo.FullName,
+                              TotalFunded = user.CreatedProjects.Where(x => categoryid.Contains(x.CategoryID.ToString()) || allCategory).Sum(x => (decimal?)x.CurrentFunded) ?? 0,
+                              TotalBacked = user.Backings.Where(x => categoryid.Contains(x.Project.CategoryID.ToString()) || allCategory).Sum(x => (decimal?)x.BackingDetail.PledgedAmount) ?? 0
+                          };
+            int count = UserTop.Count();
+            if (count >= 10) count = 10;
+            Dictionary<string, List<UserBackInforDTO>> dic = new Dictionary<string, List<UserBackInforDTO>>();
+            dic.Add("UserTopBack", UserTop.Where(x => x.TotalBacked > 0).Take(count).OrderByDescending(x => x.TotalBacked).ThenByDescending(x => x.TotalFunded).ToList());
+            dic.Add("UserTopFund", UserTop.Where(x => x.TotalFunded > 0).Take(count).OrderByDescending(x => x.TotalFunded).ThenByDescending(x => x.TotalBacked).ToList());
+            return dic;
+        }
+
+        #endregion
         public DDL_User CreateEmptyUser()
         {
             var user = new DDL_User
             {
                 Username = string.Empty,
                 Email = string.Empty,
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 IsActive = false,
                 IsVerify = false,
                 VerifyCode = string.Empty,
@@ -133,11 +156,11 @@ namespace DDL_CapstoneProject.Respository
             {
                 LoginType = DDLConstants.LoginType.FACEBOOK,
                 Email = me.email,
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 IsActive = true,
                 Password = string.Empty,
                 IsVerify = true,
-                LastLogin = DateTime.Now,
+                LastLogin = DateTime.UtcNow,
                 UserType = DDLConstants.UserType.USER,
                 Username = me.id,
                 VerifyCode = string.Empty,
@@ -186,6 +209,7 @@ namespace DDL_CapstoneProject.Respository
                 newDLLUser.Email = newUser.Email;
                 newDLLUser.VerifyCode = verifyCode;
                 newDLLUser.UserInfo.FullName = newUser.FullName;
+                newDLLUser.UserInfo.ProfileImage = "avatar_default.png";
                 db.DDL_Users.Add(newDLLUser);
                 db.SaveChanges();
 
@@ -264,6 +288,8 @@ namespace DDL_CapstoneProject.Respository
                              where user.Username == userName
                              select new UserPublicInfoDTO
                              {
+                                 IsActive = user.IsActive,
+                                 PhoneNumber = user.UserInfo.PhoneNumber,
                                  FullName = user.UserInfo.FullName,
                                  Biography = user.UserInfo.Biography,
                                  CreatedDate = user.CreatedDate,
@@ -282,7 +308,10 @@ namespace DDL_CapstoneProject.Respository
                 throw new UserNotFoundException();
             }
 
-            return userPublic.FirstOrDefault();
+            var userPublicDTO = userPublic.FirstOrDefault();
+            userPublicDTO.CreatedDate = CommonUtils.ConvertDateTimeFromUtc(userPublicDTO.CreatedDate);
+
+            return userPublicDTO;
         }
 
         public UserEditInfoDTO GetUserEditInfo(string userName)

@@ -1,6 +1,6 @@
 ﻿"use strict";
 
-app.controller('ProjectDetailController', function ($scope, $sce, $rootScope, toastr, project, ProjectService, CommmonService) {
+app.controller('ProjectDetailController', function ($scope, $sce, $rootScope, toastr, project, ProjectService, CommmonService, DTOptionsBuilder, DTColumnDefBuilder,$filter) {
     //Todo here.
     $scope.Project = project.data.Data;
     $scope.FirstUpdateLogs = false;
@@ -212,6 +212,7 @@ app.controller('ProjectDetailController', function ($scope, $sce, $rootScope, to
             function (result) {
                 if (result.data.Status === "success") {
                     toastr.success('Báo cáo sai phạm thành công!');
+
                 } else if (result.data.Status === "error") {
                     $scope.Error = result.data.Message;
                     toastr.error($scope.Error, 'Bạn chưa đăng nhập!');
@@ -228,6 +229,16 @@ app.controller('ProjectDetailController', function ($scope, $sce, $rootScope, to
             }
          );
     };
+
+    // Define table
+    $scope.dtOptions = DTOptionsBuilder.newOptions()
+    .withDisplayLength(10)
+    .withOption('order', [3, 'desc'])
+    .withBootstrap();
+
+    $scope.dtColumnDefs = [
+        DTColumnDefBuilder.newColumnDef(0).notSortable()
+    ];
     
     
 });

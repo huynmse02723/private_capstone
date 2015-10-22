@@ -24,13 +24,74 @@ namespace DDL_CapstoneProject.Respository
         #endregion
 
         #region "Methods"
+        #region TrungVN
 
-        //TrungVn
-        public List<ProjectBasicViewDTO> GetProject(int take, int categoryid, string order)
+        public Dictionary<string, int> getStatisticsInfor()
         {
+            Dictionary<string, int> dic = new Dictionary<string, int>();
+            //projectSuccesedCount
+            int projectSuccesedCount = GetProject(0, 0, "All", "", "", "", true, "true").Count;
+            //total funded
+            var totalFund = from project in db.Projects
+                            select project.CurrentFunded;
+            //backingusercount and userbackmuchcount 
+            var backingUser = from backing in db.Backings
+                              group backing by backing.UserID into b
+                              select b;
+            int backingUserCount = backingUser.Count();
+            var backingUserCount2 = (from backing in backingUser
+                                     select backing.GroupBy(x => x.ProjectID)).ToList();
+            List<int> UserBackmuchList = new List<int>();
+            foreach (var item in backingUserCount2)
+            {
+                if (item.Count() >= 2)
+                    UserBackmuchList.Add(item.Count());
+            }
+            int UserBackmuchCount = UserBackmuchList.Count();
+
+            //numberofbacking
+            int NumberOfBacking = (from backing in db.Backings
+                                   select backing.BackingID).Count();
+
+            dic.Add("SuccesedCount", projectSuccesedCount);
+            dic.Add("TotalFunded", Convert.ToInt32(totalFund.Sum()));
+            dic.Add("BackingUserCount", backingUserCount);
+            dic.Add("UserBackmuchCount", UserBackmuchCount);
+            dic.Add("NumberOfBacking", NumberOfBacking);
+            return dic;
+        }
+
+
+        public List<ProjectBasicViewDTO> GetProjectTop(String categoryid)
+        {
+            categoryid = "|" + categoryid + "|";
+            return GetProject(10, 0, categoryid, "CurrentFunded", "", "", true, "");
+        }
+
+
+
+        public List<ProjectBasicViewDTO> GetProject(int take, int from, String categoryidList, string order,
+                                                    string pathofprojectname, string status,
+                                                    bool isExprired, string isFunded)
+        {
+            if (pathofprojectname == null)
+            {
+                pathofprojectname = "";
+            }
+            else
+            {
+                if (pathofprojectname == "null")
+                    pathofprojectname = "";
+            }
+            if (status == null) status = "";
+            if (isFunded == null) isFunded = "";
+
+
             DateTime currentDate = DateTime.Now;
             var ProjectList = from project in db.Projects
-                              where !project.IsExprired && (categoryid == 0 || project.CategoryID == categoryid)
+                              where (categoryidList.ToLower().Contains("all") || categoryidList.Contains("|" + project.CategoryID + "|"))
+                              && project.IsExprired == isExprired && project.Title.Contains(pathofprojectname)
+                              && project.Status.Contains(status) && project.IsFunded.ToString().ToLower().Contains(isFunded)
                               select new ProjectBasicViewDTO
                               {
                                   ProjectID = project.ProjectID,
@@ -49,15 +110,13 @@ namespace DDL_CapstoneProject.Respository
                                   CreatedDate = project.CreatedDate,
                                   PopularPoint = project.PopularPoint
                               };
-            try
-            {
-                if (ProjectList.Any())
-                {
-                    return orderBy(order, ProjectList).Take(take).ToList();
-                }
-            }
-            catch (Exception ex) { }
-            return new List<ProjectBasicViewDTO>();
+            int leng = ProjectList.Count();
+            if (take == 0)
+                take = leng;
+            else if (take > leng)
+                take = leng;
+
+            return orderBy(order, ProjectList).Take(take).ToList();
         }
 
 
@@ -65,36 +124,19 @@ namespace DDL_CapstoneProject.Respository
         {
             var list = new List<ProjectBasicViewDTO>();
             var HeightestFund = from project in db.Projects
-                                where project.IsExprired && project.CurrentFunded > project.FundingGoal
+                                where project.IsExprired && project.IsFunded
                                 orderby project.CurrentFunded
                                 select new ProjectBasicViewDTO
                                 {
                                     CurrentFundedNumber = project.CurrentFunded
                                 };
-            try
-            {
-                if (HeightestFund.Any())
-                {
-                    list.Add(HeightestFund.Take(1).ToList()[0]);
-                }
-            }
-            catch (Exception ex) { Debug.WriteLine(ex); }
             var TotalFund = from project in db.Projects
                             select project.CurrentFunded;
-            try
-            {
-                var pro = new ProjectBasicViewDTO();
-                if (TotalFund.Any())
-                {
-                    pro.CurrentFundedNumber = (Convert.ToDecimal(TotalFund.Sum()));
-                }
-                list.Add(pro);
-            }
-            catch (Exception ex) { Debug.WriteLine(ex); }
-            if (!list.Any())
-            {
-                list.Add(new ProjectBasicViewDTO());
-            }
+            var totalFund = new ProjectBasicViewDTO();
+            totalFund.CurrentFundedNumber = (Convert.ToDecimal(TotalFund.Sum()));
+
+            list.Add(HeightestFund.FirstOrDefault());
+            list.Add(totalFund);
             return list;
         }
 
@@ -140,7 +182,7 @@ namespace DDL_CapstoneProject.Respository
                 List<Category> cat = db.Categories.ToList();
                 for (int i = 0; i < cat.Count(); i++)
                 {
-                    List<ProjectBasicViewDTO> getProject = GetProject(1, cat[i].CategoryID, "PopularPoint");
+                    List<ProjectBasicViewDTO> getProject = GetProject(1, 0, "|" + cat[i].CategoryID + "|", "PopularPoint", "", "", false, "");
                     if (getProject.Any())
                         ProjectList.Add(getProject[0]);
                 }
@@ -152,26 +194,27 @@ namespace DDL_CapstoneProject.Respository
             return ProjectList;
         }
 
+
         public List<List<ProjectBasicViewDTO>> GetProjectStatisticList()
         {
             var ProjectList = new List<List<ProjectBasicViewDTO>>();
-            ProjectList.Add(GetProject(3, 0, "PopularPoint"));
-            ProjectList.Add(GetProject(3, 0, "CreatedDate"));
-            ProjectList.Add(GetProject(3, 0, "CurrentFunded"));
-            ProjectList.Add(GetProject(3, 0, "ExpireDate"));
+            ProjectList.Add(GetProject(3, 0, "All", "PopularPoint", "", "", false, ""));
+            ProjectList.Add(GetProject(3, 0, "All", "CreatedDate", "", "", false, ""));
+            ProjectList.Add(GetProject(3, 0, "All", "CurrentFunded", "", "", false, ""));
+            ProjectList.Add(GetProject(3, 0, "All", "ExpireDate", "", "", false, ""));
 
             return ProjectList;
         }
         public List<List<ProjectBasicViewDTO>> GetStatisticListForHome()
         {
             var ProjectList = new List<List<ProjectBasicViewDTO>>();
-            ProjectList.Add(GetProject(3, 0, "PopularPoint"));
+            ProjectList.Add(GetProject(3, 0, "All", "PopularPoint", "", "", false, ""));
             ProjectList.Add(GetProjectByCategory());
-            ProjectList.Add(GetProject(1, 0, "CurrentFunded"));
+            ProjectList.Add(GetProject(1, 0, "All", "CurrentFunded", "", "", false, ""));
             ProjectList.Add(GetProjectHightestAndTotalFund());
             return ProjectList;
         }
-        //TrungVn
+        #endregion
 
         #region HuyNM
         /// <summary>
@@ -186,7 +229,8 @@ namespace DDL_CapstoneProject.Respository
             project.CategoryID = 0;
             project.CreatorID = 0;
             project.Title = string.Empty;
-            project.CreatedDate = DateTime.Today;
+            project.CreatedDate = DateTime.UtcNow;
+            project.UpdatedDate = DateTime.UtcNow;
             project.Risk = string.Empty;
             project.ImageUrl = string.Empty;
             project.SubDescription = string.Empty;
@@ -206,13 +250,19 @@ namespace DDL_CapstoneProject.Respository
         /// Create a new project
         /// </summary>
         /// <returns>project</returns>
-        public string CreatProject(ProjectCreateDTO newProject)
+        public string CreatProject(ProjectCreateDTO newProject, string username)
         {
+            var user = db.DDL_Users.SingleOrDefault(x => x.Username == username);
+            if (user == null)
+            {
+                throw new KeyNotFoundException();
+            }
+
             var project = CreateEmptyProject();
             project.CreatorID = newProject.CategoryID;
             project.Title = newProject.Title;
             project.CategoryID = newProject.CategoryID;
-            project.CreatorID = newProject.CreatorID;
+            project.CreatorID = user.DDL_UserID;
             project.FundingGoal = newProject.FundingGoal;
 
             db.Projects.Add(project);
@@ -255,7 +305,12 @@ namespace DDL_CapstoneProject.Respository
             updateProject.Status = project.Status;
             updateProject.SubDescription = project.SubDescription;
             updateProject.Title = project.Title;
-            updateProject.UpdatedDate = DateTime.Today;
+            updateProject.UpdatedDate = DateTime.UtcNow;
+
+            if (updateProject.ExpireDate != null)
+            {
+                updateProject.ExpireDate = CommonUtils.ConvertDateTimeToUtc(updateProject.ExpireDate.GetValueOrDefault());
+            }
 
             db.SaveChanges();
 
@@ -273,6 +328,8 @@ namespace DDL_CapstoneProject.Respository
                 ImageUrl = updateProject.ImageUrl,
                 CurrentFunded = project.CurrentFunded,
             };
+
+            updateProjectDTO.ExpireDate = CommonUtils.ConvertDateTimeFromUtc(updateProjectDTO.ExpireDate.GetValueOrDefault());
 
             // Set number exprire day.
             var timespan = updateProjectDTO.ExpireDate - DateTime.Today;
@@ -298,6 +355,7 @@ namespace DDL_CapstoneProject.Respository
             updateProject.Risk = project.Risk;
             updateProject.VideoUrl = project.VideoUrl;
             updateProject.Description = project.Description;
+            updateProject.UpdatedDate = DateTime.UtcNow;
 
             db.SaveChanges();
 
@@ -348,6 +406,8 @@ namespace DDL_CapstoneProject.Respository
                 CurrentFunded = project.CurrentFunded,
             };
 
+            projectDTO.ExpireDate = CommonUtils.ConvertDateTimeFromUtc(projectDTO.ExpireDate.GetValueOrDefault());
+
             // Set number exprire day.
             var timespan = projectDTO.ExpireDate - DateTime.Today;
             projectDTO.NumberDays = timespan.GetValueOrDefault().Days;
@@ -375,6 +435,11 @@ namespace DDL_CapstoneProject.Respository
             return projectBasicDTO;
         }
 
+        /// <summary>
+        /// Submit a project
+        /// </summary>
+        /// <param name="submitProject"></param>
+        /// <returns>errorList</returns>
         public List<string> SubmitProject(ProjectEditDTO submitProject)
         {
             var project = db.Projects.SingleOrDefault(u => u.ProjectID == submitProject.ProjectID);
@@ -421,6 +486,37 @@ namespace DDL_CapstoneProject.Respository
             return mylist;
         }
 
+        public ProjectInfoBackDTO GetBackProjectInfo(string code)
+        {
+            var project = db.Projects.SingleOrDefault(x => x.ProjectCode == code);
+
+            if (project == null)
+            {
+                throw new KeyNotFoundException();
+            }
+
+            var user = db.DDL_Users.SingleOrDefault(x => x.DDL_UserID == project.CreatorID);
+
+            if (user == null)
+            {
+                throw new NotPermissionException();
+            }
+
+            var projectInforDTO = new ProjectInfoBackDTO
+            {
+                ProjectCode = project.ProjectCode,
+                Title = project.Title,
+                Creator = user.UserInfo.FullName
+            };
+
+            return projectInforDTO;
+        }
+
+        /// <summary>
+        /// Back a project
+        /// </summary>
+        /// <param name="backingData"></param>
+        /// <returns>projectCode</returns>
         public string BackProject(ProjectBackDTO backingData)
         {
             var project = db.Projects.SingleOrDefault(x => x.ProjectCode == backingData.ProjectCode);
@@ -440,7 +536,7 @@ namespace DDL_CapstoneProject.Respository
             var backing = db.Backings.Create();
             backing.UserID = user.DDL_UserID;
             backing.ProjectID = project.ProjectID;
-            backing.BackedDate = DateTime.Today;
+            backing.BackedDate = DateTime.UtcNow;
             backing.IsPublic = backingData.IsPublic;
 
             // Create new backingDetail recored
@@ -461,6 +557,15 @@ namespace DDL_CapstoneProject.Respository
             // Caculate project current fund
             project.CurrentFunded += backingDetail.PledgedAmount;
 
+            // Caculate reward quantity
+            var rewardPkg = db.RewardPkgs.SingleOrDefault(u => u.RewardPkgID == backingDetail.RewardPkgID);
+            if (rewardPkg == null)
+            {
+                throw new KeyNotFoundException();
+            }
+
+            rewardPkg.CurrentQuantity += backingDetail.Quantity;
+
             db.SaveChanges();
 
             return project.ProjectCode;
@@ -473,7 +578,7 @@ namespace DDL_CapstoneProject.Respository
             {
                 throw new KeyNotFoundException();
             }
-
+            var userCurrent = db.DDL_Users.FirstOrDefault(x => x.Username == userName);
             // Create Project query from dB.
             var projectDetail = (from project in db.Projects
                                  where project.ProjectCode.Equals(projectCode.ToUpper())
@@ -508,40 +613,36 @@ namespace DDL_CapstoneProject.Respository
                                              && x.Status != DDLConstants.ProjectStatus.REJECTED
                                              && x.Status != DDLConstants.ProjectStatus.PENDING),
                                          ProfileImage = project.Creator.UserInfo.ProfileImage
-                                     }
+                                     },
+                                     Reminded = project.Reminds.Count(x => x.ProjectID == project.ProjectID && x.UserID == userCurrent.DDL_UserID),
                                  }).FirstOrDefault();
-
+            List<RewardPkg> rewardDetail = db.RewardPkgs.Where(x => x.Project.ProjectCode == projectCode).ToList();
+            List<RewardPkgDTO> RewardDTO = new List<RewardPkgDTO>();
+            foreach (RewardPkg reward in rewardDetail)
+            {
+                RewardPkgDTO Reward = new RewardPkgDTO
+                {
+                    Backers = reward.BackingDetails.Count(),
+                    Description = reward.Description,
+                    EstimatedDelivery = CommonUtils.ConvertDateTimeFromUtc(reward.EstimatedDelivery.GetValueOrDefault()),
+                    PledgeAmount = reward.PledgeAmount,
+                    Quantity = reward.Quantity
+                };
+                RewardDTO.Add(Reward);
+            }
+            projectDetail.RewardDetail = RewardDTO;
             // Check project exist?
             if (projectDetail == null)
             {
                 throw new KeyNotFoundException();
             }
 
-            // Get comments.
-            //var commentsList = (userName != null && projectDetail.Creator.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase))
-            //                    ? GetComments(projectDetail.ProjectID, true)
-            //                    : GetComments(projectDetail.ProjectID, false);
-
-            //// Insert list comments into project
-            //projectDetail.CommentsList = commentsList;
-
-            //// Get updateLog list.
-            //var updateLogsList = (from updateLog in db.UpdateLogs
-            //                      where updateLog.ProjectID == projectDetail.ProjectID
-            //                      orderby updateLog.CreatedDate descending
-            //                      select new UpdateLogDTO
-            //                      {
-            //                          CreatedDate = updateLog.CreatedDate,
-            //                          Description = updateLog.Description,
-            //                          Title = updateLog.Title,
-            //                          UpdateLogID = updateLog.UpdateLogID
-            //                      }).ToList();
-
-            //// Insert updatelog list into projectDTO
-            //projectDetail.UpdateLogsList = updateLogsList;
+            // Convert datetime to gmt+7
+            projectDetail.CreatedDate = CommonUtils.ConvertDateTimeFromUtc(projectDetail.CreatedDate);
+            projectDetail.ExpireDate = CommonUtils.ConvertDateTimeFromUtc(projectDetail.ExpireDate.GetValueOrDefault());
 
             // Set number exprire day.
-            var timespan = projectDetail.ExpireDate - DateTime.Today;
+            var timespan = projectDetail.ExpireDate - CommonUtils.DateTodayGMT7();
             projectDetail.NumberDays = timespan.GetValueOrDefault().Days;
 
             return projectDetail;
@@ -581,7 +682,7 @@ namespace DDL_CapstoneProject.Respository
                                       Title = updateLog.Title,
                                       UpdateLogID = updateLog.UpdateLogID
                                   }).ToList();
-
+            updateLogsList.ForEach(x => x.CreatedDate = CommonUtils.ConvertDateTimeFromUtc(x.CreatedDate));
             return updateLogsList;
         }
 
@@ -745,6 +846,7 @@ namespace DDL_CapstoneProject.Respository
                              };
             foreach (BackingDTO backer in listBacker)
             {
+                backer.Date = CommonUtils.ConvertDateTimeFromUtc(backer.Date.GetValueOrDefault());
                 list.Add(backer);
             }
             return list;
@@ -774,13 +876,17 @@ namespace DDL_CapstoneProject.Respository
                 commentsQuery = commentsQuery.Where(x => !x.IsHide);
             }
 
+            var lastDateTimeUtc = CommonUtils.ConvertDateTimeToUtc(lastDateTime.GetValueOrDefault());
+
             if (lastDateTime != null)
             {
-                commentsQuery = commentsQuery.Where(x => x.CreatedDate < lastDateTime);
+                commentsQuery = commentsQuery.Where(x => x.CreatedDate < lastDateTimeUtc);
             }
 
             //var commentsList = showHide ? commentsQuery.Take(10).ToList() : commentsQuery.Where(x => !x.IsHide).Take(10).ToList();
             var commentsList = commentsQuery.Take(10).ToList();
+
+            commentsList.ForEach(x => x.CreatedDate = CommonUtils.ConvertDateTimeFromUtc(x.CreatedDate));
 
             return commentsList;
         }
@@ -809,21 +915,23 @@ namespace DDL_CapstoneProject.Respository
             // Create comment.
             var newComment = db.Comments.Create();
             newComment.CommentContent = comment.CommentContent;
-            newComment.CreatedDate = DateTime.Now;
+            newComment.CreatedDate = DateTime.UtcNow;
             newComment.IsHide = false;
             newComment.UserID = user.DDL_UserID;
             newComment.ProjectID = project.ProjectID;
             newComment.IsEdited = false;
-            newComment.UpdatedDate = DateTime.Now;
+            newComment.UpdatedDate = DateTime.UtcNow;
 
 
             // Add to DB.
             db.Comments.Add(newComment);
             db.SaveChanges();
 
+            var lastDatimeTimeUtc = CommonUtils.ConvertDateTimeToUtc(lastCommentDateTime);
+
             // Get list new comment.
             var commentsQuery = from commentItem in db.Comments
-                                where commentItem.Project.ProjectCode == projectCode && commentItem.CreatedDate > lastCommentDateTime
+                                where commentItem.Project.ProjectCode == projectCode && commentItem.CreatedDate > lastDatimeTimeUtc
                                 orderby commentItem.CreatedDate descending
                                 select new CommentDTO
                                 {
@@ -839,6 +947,8 @@ namespace DDL_CapstoneProject.Respository
             var commentsList = (comment.UserName == project.Creator.Username)
                 ? commentsQuery.ToList()
                 : commentsQuery.Where(c => !c.IsHide).ToList();
+
+            commentsList.ForEach(x => x.CreatedDate = CommonUtils.ConvertDateTimeFromUtc(x.CreatedDate));
 
             return commentsList;
         }
@@ -876,7 +986,7 @@ namespace DDL_CapstoneProject.Respository
             {
                 IsHide = comment.IsHide,
                 FullName = comment.User.UserInfo.FullName,
-                CreatedDate = comment.CreatedDate,
+                CreatedDate = CommonUtils.ConvertDateTimeFromUtc(comment.CreatedDate),
                 ProfileImage = comment.User.UserInfo.ProfileImage,
                 UserName = comment.User.Username,
                 CommentContent = comment.CommentContent,
@@ -912,7 +1022,7 @@ namespace DDL_CapstoneProject.Respository
 
             // Change content
             comment.CommentContent = content;
-            comment.UpdatedDate = DateTime.Now;
+            comment.UpdatedDate = DateTime.UtcNow;
             comment.IsEdited = true;
 
             // Save in DB
@@ -923,7 +1033,7 @@ namespace DDL_CapstoneProject.Respository
             {
                 IsHide = comment.IsHide,
                 FullName = comment.User.UserInfo.FullName,
-                CreatedDate = comment.CreatedDate,
+                CreatedDate = CommonUtils.ConvertDateTimeFromUtc(comment.CreatedDate),
                 ProfileImage = comment.User.UserInfo.ProfileImage,
                 UserName = comment.User.Username,
                 CommentContent = comment.CommentContent,

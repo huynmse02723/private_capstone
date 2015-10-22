@@ -30,8 +30,8 @@
                     <div class="pt20">
                         <a class="btn btn-primary btn-lg" href="@Url.Content("/#/project/back/{{Project.ProjectCode}}")">Ủng hộ dự án</a>
                         <button class="btn btn-danger btn-lg" disabled ng-if="Project.IsExprired" href="back_project.html">Dự án đã hết hạn</button>
-                        <a ng-hide="Reminded" href="" class="grey-dark" ng-click="remind()">&nbsp;&nbsp;<i class="fa fa-star"></i> Đánh dấu</a>
-                        <a ng-show="Reminded" href="" style="color : #16a085" class="grey-dark" ng-click="remind()">&nbsp;&nbsp;<i class="fa fa-star"></i> Đánh dấu</a>
+                        <a ng-show="Project.Reminded != 1" href="" class="grey-dark" ng-click="remind()">&nbsp;&nbsp;<i class="fa fa-star"></i> Đánh dấu</a>
+                        <a ng-hide="Project.Reminded != 1" href="" style="color : #16a085" class="grey-dark" ng-click="remind()">&nbsp;&nbsp;<i class="fa fa-star"></i> Đánh dấu</a>
                     </div>
                     <div class="pt10">
                         <p class="fnt15 grey-dark" ng-if="!Project.IsExprired">
@@ -97,7 +97,7 @@
                 <li><a showtab href="#update" data-toggle="tab" ng-click="getUpdateLogList()">Cập nhật <span class="badge">{{Project.NumberUpdate}}</span></a></li>
                 <li><a showtab href="#comments" data-toggle="tab" ng-click="getCommentList()">Bình luận <span class="badge">{{Project.NumberComment}}</span></a></li>
                 <li><a showtab href="#schedule" data-toggle="tab">Tiến trình</a></li>
-                <li><a showtab href="#list-backers" data-toggle="tab" ng-click="loadlistBacker()">Ủng hộ <span class="badge">10</span></a></li>
+                <li><a showtab href="#list-backers" data-toggle="tab" ng-click="loadlistBacker()">Ủng hộ <span class="badge">{{Project.NumberBacked}}</span></a></li>
             </ul>
         </div>
     </div>
@@ -154,123 +154,23 @@
                                     <!-- start our menu here-->
                                     <div id="#reward" class="our_menu">
                                         <ul class="menu">
-                                            <li class="item">
+                                            <li ng-repeat="reward in Project.RewardDetail" class="item">
                                                 <div class="item-show">
-                                                    <h5 class="fnt20 c3" for="">Pledge $10 or more</h5>
-                                                    <p class="bold"><span class="glyphicon glyphicon-asterisk"></span>24 backers</p>
+                                                    <h5 class="fnt20 c3" for="">Ủng hộ {{reward.PledgeAmount}} <span class="money usd no-code">&#8363;</span> hoặc nhiều hơn</h5>
+                                                    <p class="bold"><span class="glyphicon glyphicon-asterisk"></span> {{reward.Backers}}  backers</p>
                                                     <div class="item-description">
-                                                        <p>Thank the Seven! Err-- Five!</p>
-                                                        <p>Thank you for your pledge! For this sign of support, we here at Larian Studios are truly grateful.</p>
+                                                        {{reward.Description}}
                                                     </div>
                                                     <div class="item-extra-info">
-                                                        <p class="">Estimated delivery:</p>
-                                                        <p>Oct 2015</p>
+                                                        <p class="">Thời gian giao hàng ước tính :</p>
+                                                        <p>{{reward.EstimatedDelivery | date:"'Tháng' MM/yyyy"}} </p>
                                                     </div>
-                                                    <div class="item-expand pb10">
-                                                        <form role="form">
-                                                            <p class="fnt20 fnt-b pt10 c3">Pledge amount:</p>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số tiền" value="10" />
-                                                                <span class="input-group-addon">VNĐ</span>
-                                                            </div>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số lượng" value="1" />
-                                                                <span class="input-group-addon">SP</span>
-                                                            </div>
-                                                            <a href="back-project.html" class="form-control btn btn-primary">Continue</a>
-                                                        </form>
+                                                </div> <!-- end main Reward -->
+                                                <a href="back-project.html">
+                                                    <div class="hoverReward">
+                                                        <span class="titleHover">Chọn gói quà này</span>
                                                     </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                        <ul class="menu">
-                                            <li class="item">
-                                                <div class="item-show">
-                                                    <h5 class="fnt20 c3" for="">Pledge $15 or more</h5>
-                                                    <p class="bold"><span class="glyphicon glyphicon-asterisk"></span>24 backers</p>
-                                                    <div class="item-description">
-                                                        <p>Thank the Seven! Err-- Five!</p>
-                                                        <p>Thank you for your pledge! For this sign of support, we here at Larian Studios are truly grateful.</p>
-                                                    </div>
-                                                    <div class="item-extra-info">
-                                                        <p class="">Estimated delivery:</p>
-                                                        <p>Oct 2015</p>
-                                                    </div>
-                                                    <div class="item-expand pb10">
-                                                        <form role="form">
-                                                            <p class="fnt20 fnt-b pt10 c3 pb0">Plegde Infor:</p>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số tiền" value="15" />
-                                                                <span class="input-group-addon">VNĐ</span>
-                                                            </div>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số lượng" value="1" />
-                                                                <span class="input-group-addon">SP</span>
-                                                            </div>
-                                                            <a href="back-project.html" class="form-control btn btn-primary">Continue</a>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                        <ul class="menu">
-                                            <li class="item">
-                                                <div class="item-show">
-                                                    <h5 class="fnt20 c3" for="">Pledge $20 or more</h5>
-                                                    <p class="bold"><span class="glyphicon glyphicon-asterisk"></span>24 backers</p>
-                                                    <div class="item-description">
-                                                        <p>Thank the Seven! Err-- Five!</p>
-                                                        <p>Thank you for your pledge! For this sign of support, we here at Larian Studios are truly grateful.</p>
-                                                    </div>
-                                                    <div class="item-extra-info">
-                                                        <p class="">Estimated delivery:</p>
-                                                        <p>Oct 2015</p>
-                                                    </div>
-                                                    <div class="item-expand pb10">
-                                                        <form role="form">
-                                                            <p class="fnt20 fnt-b pt10 c3">Pledge amount:</p>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số tiền" value="20" />
-                                                                <span class="input-group-addon">VNĐ</span>
-                                                            </div>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số lượng" value="1" />
-                                                                <span class="input-group-addon">SP</span>
-                                                            </div>
-                                                            <a href="back-project.html" class="form-control btn btn-primary">Continue</a>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                        <ul class="menu">
-                                            <li class="item">
-                                                <div class="item-show">
-                                                    <h5 class="fnt20 c3" for="">Pledge $50 or more</h5>
-                                                    <p class="bold"><span class="glyphicon glyphicon-asterisk"></span>24 backers</p>
-                                                    <div class="item-description">
-                                                        <p>Thank the Seven! Err-- Five!</p>
-                                                        <p>Thank you for your pledge! For this sign of support, we here at Larian Studios are truly grateful.</p>
-                                                    </div>
-                                                    <div class="item-extra-info">
-                                                        <p class="">Estimated delivery:</p>
-                                                        <p>Oct 2015</p>
-                                                    </div>
-                                                    <div class="item-expand pb10">
-                                                        <form role="form">
-                                                            <p class="fnt20 fnt-b pt10 c3">Pledge amount:</p>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số tiền" value="50" />
-                                                                <span class="input-group-addon">VNĐ</span>
-                                                            </div>
-                                                            <div class="input-group pb10">
-                                                                <input type="text" class="form-control" placeholder="Nhập số lượng" value="1" />
-                                                                <span class="input-group-addon">SP</span>
-                                                            </div>
-                                                            <a href="back-project.html" class="form-control btn btn-primary">Continue</a>
-                                                        </form>
-                                                    </div>
-                                                </div>
+                                                </a> <!-- end hover Reward -->
                                             </li>
                                         </ul>
                                     </div>
@@ -436,7 +336,8 @@
                             </div> <!-- TITLE -->
                             <div id="backerlistchart" class="pb30" style="height: 300px">
                             </div> <!-- LINE CHART BACKERS -->
-                            <table id="backersTable" class="table table-striped table-bordered table-hover">
+                            <table id="backersTable" class="table table-striped table-bordered table-hover"
+                                   datatable="ng" dt-options="dtOptions" dt-column-defs="dtColumnDefs">
                                 <thead>
                                     <tr style="background: #16a085; color: #FFF">
                                         <th style="width: 8%">.No</th>
@@ -450,7 +351,7 @@
                                         <td>{{$index + 1}}</td>
                                         <td>{{x.FullName}}</td>
                                         <td>{{x.Amount}}</td>
-                                        <td>{{x.Date}}</td>
+                                        <td>{{x.Date | date:"dd/MM/yyyy"}}</td>
                                     </tr>
                                 </tbody>
                             </table>  <!-- TABLE BACKERS LIST -->
