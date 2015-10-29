@@ -1100,6 +1100,72 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
 
             return Ok(new HttpMessageDTO { Status = "success", Message = "", Type = "", Data = listBacker });
         }
+
+        // GET: api/ProjectApi/AdminGetDashboardInfo/
+        [HttpGet]
+        [ResponseType(typeof(AdminDashboardInfoDTO))]
+        public IHttpActionResult AdminGetDashboardInfo()
+        {
+            var generalInfo = new AdminDashboardInfoDTO();
+
+            try
+            {
+                // Check authen.
+                if (User.Identity == null || !User.Identity.IsAuthenticated)
+                {
+                    return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+                }
+
+                // Check role user.
+                var currentUser = UserRepository.Instance.GetBasicInfo(User.Identity.Name);
+                if (currentUser == null || currentUser.Role != DDLConstants.UserType.ADMIN)
+                {
+                    throw new NotPermissionException();
+                }
+
+                generalInfo = ProjectRepository.Instance.AdminDashboardInfo();
+            }
+            catch (Exception)
+            {
+
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = generalInfo });
+        }
+
+        // GET: api/ProjectApi/AdminGetTopProjectList/
+        [HttpGet]
+        [ResponseType(typeof(ProjectBasicListDTO))]
+        public IHttpActionResult AdminGetTopProjectList()
+        {
+            var projectList = new List<ProjectBasicListDTO>();
+
+            try
+            {
+                // Check authen.
+                if (User.Identity == null || !User.Identity.IsAuthenticated)
+                {
+                    return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+                }
+
+                // Check role user.
+                var currentUser = UserRepository.Instance.GetBasicInfo(User.Identity.Name);
+                if (currentUser == null || currentUser.Role != DDLConstants.UserType.ADMIN)
+                {
+                    throw new NotPermissionException();
+                }
+
+                projectList = ProjectRepository.Instance.AdminGetTopProjectList();
+            }
+            catch (Exception)
+            {
+
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = projectList });
+        }
         #endregion
 
         #endregion
@@ -1108,6 +1174,11 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
         #region TrungVN
         [HttpGet]
 
+        public IHttpActionResult SearchCount(string categoryidlist, string searchkey)
+        {
+            var listGetProjectTop = ProjectRepository.Instance.SearchCount(categoryidlist, searchkey);
+            return Ok(new HttpMessageDTO { Status = "success", Data = listGetProjectTop });
+        }
         public IHttpActionResult GetProjectTop(string categoryid)
         {
             var listGetProjectTop = ProjectRepository.Instance.GetProjectTop(categoryid);
@@ -1564,15 +1635,14 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
         /// Post: api/ProjectApi/Comment?projectCode=xxx
         /// </summary>
         /// <param name="projectCode">projectCode</param>
-        /// <param name="lastComment">CommentDTO</param>
         /// <param name="comment">CommentDTO</param>
+        /// <param name="lastDateTime"></param>
         /// <returns>CommentDTO</returns>
         [HttpPost]
         [ResponseType(typeof(CommentDTO))]
-        public IHttpActionResult Comment(string projectCode, DateTime lastComment, CommentDTO comment)
+        public IHttpActionResult Comment(string projectCode, CommentDTO comment,string lastDateTime = "")
         {
             List<CommentDTO> result = null;
-
             if (User.Identity == null || !User.Identity.IsAuthenticated)
             {
                 return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
@@ -1580,7 +1650,8 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
 
             try
             {
-                result = ProjectRepository.Instance.AddComment(projectCode, comment, lastComment);
+                var datetime = !string.IsNullOrEmpty(lastDateTime) ? DateTime.Parse(lastDateTime) : CommonUtils.DateTimeNowGMT7();
+                result = ProjectRepository.Instance.AddComment(projectCode, comment, datetime);
             }
             catch (UserNotFoundException)
             {
