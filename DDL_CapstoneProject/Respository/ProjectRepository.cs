@@ -646,7 +646,7 @@ namespace DDL_CapstoneProject.Respository
                 rewardPkg.CurrentQuantity += backingDetail.Quantity;
 
                 // Set project is funded
-                if (project.CurrentFunded >= project.FundingGoal)
+                if ((project.CurrentFunded >= project.FundingGoal) && project.IsFunded == false)
                 {
                     project.IsFunded = true;
                 }
@@ -679,7 +679,7 @@ namespace DDL_CapstoneProject.Respository
                 {
                     ApprovedProject = approved,
                     ExpriredProject = expired,
-                    FundedProject = funded,
+                    SucceedProject = funded,
                     PendingProject = pending,
                     SuspendedProject = suspended,
                     TotalProject = total
@@ -731,7 +731,7 @@ namespace DDL_CapstoneProject.Respository
                 // Get rewardPkg list
                 var projectList = (from Project in db.Projects
                                    where Project.Status != DDLConstants.ProjectStatus.DRAFT
-                                   orderby Project.CreatedDate ascending 
+                                   orderby Project.CreatedDate ascending
                                    select new ProjectBasicListDTO
                                    {
                                        ProjectCode = Project.ProjectCode,
@@ -946,14 +946,15 @@ namespace DDL_CapstoneProject.Respository
         }
 
         // 24/10/2015 - MaiCTP - Get BackingInfo
-        public List<BackingInfoDTO> BackingInfo(int projectId)
+        public List<BackingInfoDTO> BackingInfo(string projectCode)
         {
 
             using (var db = new DDLDataContext())
             {
                 var Backing = (from backing in db.Backings
                                from rewad in db.RewardPkgs
-                               where backing.ProjectID == projectId && rewad.RewardPkgID == backing.BackingDetail.RewardPkgID
+                               from project in db.Projects
+                               where project.ProjectCode ==projectCode && backing.ProjectID == project.ProjectID && rewad.RewardPkgID == backing.BackingDetail.RewardPkgID
                                select new BackingInfoDTO
                                {
 
@@ -962,7 +963,12 @@ namespace DDL_CapstoneProject.Respository
                                    Quantity = backing.BackingDetail.Quantity,
                                    BackedDate = backing.BackedDate,
                                    TotalAmount = backing.BackingDetail.Quantity * rewad.PledgeAmount,
-                                   BackingDiscription = backing.BackingDetail.Description
+                                   BackingDiscription = backing.BackingDetail.Description,
+                                   ProfileImage = backing.User.UserInfo.ProfileImage,
+                                   FullName = backing.User.UserInfo.FullName,
+                                   Email = backing.BackingDetail.Email,
+                                   Add = backing.User.UserInfo.Address,
+                                   Phone= backing.User.UserInfo.PhoneNumber
                                }).Distinct().ToList();
                 return Backing;
             }
@@ -1078,7 +1084,7 @@ namespace DDL_CapstoneProject.Respository
 
             using (var db = new DDLDataContext())
             {
-                var deleteProjectReminded = db.Reminds.SingleOrDefault(x => x.ProjectID == projectID);
+                var deleteProjectReminded =  db.Reminds.FirstOrDefault(x => x.ProjectID == projectID);
 
                 if (deleteProjectReminded == null)
                 {
@@ -1086,6 +1092,26 @@ namespace DDL_CapstoneProject.Respository
                 }
 
                 db.Reminds.Remove(deleteProjectReminded);
+                db.SaveChanges();
+
+                return true;
+            }
+        }
+
+        //24/10/2015- MaiCTP - DeleteProjectDraft
+        public bool DeleteProjectDraft(int projectID)
+        {
+
+            using (var db = new DDLDataContext())
+            {
+                var deleteProjectDraft = db.Projects.FirstOrDefault(x => x.ProjectID == projectID);
+
+                if (deleteProjectDraft == null)
+                {
+                    throw new KeyNotFoundException();
+                }
+
+                db.Projects.Remove(deleteProjectDraft);
                 db.SaveChanges();
 
                 return true;
@@ -1150,6 +1176,7 @@ namespace DDL_CapstoneProject.Respository
             }
 
         }
+
 
         public BackingDTO GetListBacker(string projectCode)
         {
