@@ -8,6 +8,7 @@ using DDL_CapstoneProject.Models;
 using DDL_CapstoneProject.Models.DTOs;
 using DDL_CapstoneProject.Ultilities;
 using System.Data.Entity;
+using System.Data.Entity.SqlServer;
 using System.Diagnostics;
 
 namespace DDL_CapstoneProject.Respository
@@ -104,7 +105,8 @@ namespace DDL_CapstoneProject.Respository
                                        categoryidList.Contains("|" + project.CategoryID + "|"))
                                       && project.IsExprired == isExprired && project.Title.Contains(pathofprojectname)
                                       && project.Status.Contains(status) && project.IsFunded.ToString().ToLower().Contains(isFunded)
-                                      && !project.Status.Equals(DDLConstants.ProjectStatus.DRAFT)
+                                      && !project.Status.Equals(DDLConstants.ProjectStatus.DRAFT) && !project.Status.Equals(DDLConstants.ProjectStatus.REJECTED)
+                                      && !project.Status.Equals(DDLConstants.ProjectStatus.SUSPENDED) && !project.Status.Equals(DDLConstants.ProjectStatus.PENDING)
                                   select new ProjectBasicViewDTO
                                   {
                                       ProjectID = project.ProjectID,
@@ -205,17 +207,17 @@ namespace DDL_CapstoneProject.Respository
         public List<List<ProjectBasicViewDTO>> GetProjectStatisticList()
         {
             var ProjectList = new List<List<ProjectBasicViewDTO>>();
-            ProjectList.Add(GetProject(3, 0, "All", "PopularPoint", "", "", false, ""));
-            ProjectList.Add(GetProject(3, 0, "All", "CreatedDate", "", "", false, ""));
-            ProjectList.Add(GetProject(3, 0, "All", "CurrentFunded", "", "", false, ""));
-            ProjectList.Add(GetProject(3, 0, "All", "ExpireDate", "", "", false, ""));
+            ProjectList.Add(GetProject(4, 0, "All", "PopularPoint", "", "", false, ""));
+            ProjectList.Add(GetProject(4, 0, "All", "CreatedDate", "", "", false, ""));
+            ProjectList.Add(GetProject(4, 0, "All", "CurrentFunded", "", "", false, ""));
+            ProjectList.Add(GetProject(4, 0, "All", "ExpireDate", "", "", false, ""));
 
             return ProjectList;
         }
         public Dictionary<string, List<ProjectBasicViewDTO>> GetStatisticListForHome()
         {
             var ProjectList = new Dictionary<string, List<ProjectBasicViewDTO>>();
-            ProjectList.Add("popularproject", GetProject(3, 0, "All", "PopularPoint", "", "", false, ""));
+            ProjectList.Add("popularproject", GetProject(4, 0, "All", "PopularPoint", "", "", false, ""));
             ProjectList.Add("projectByCategory", GetProjectByCategory());
             ProjectList.Add("highestprojectpledge", GetProject(1, 0, "All", "CurrentFunded", "", "", false, ""));
             ProjectList.Add("highestprojectfund", GetProject(1, 0, "All", "CurrentFunded", "", "", true, "true"));
@@ -806,7 +808,7 @@ namespace DDL_CapstoneProject.Respository
 
                 // Caculate total profit
                 var succeedProject = (from Project in db.Projects
-                                      where Project.IsFunded
+                                      where Project.IsFunded && Project.IsExprired
                                       select Project).ToList();
 
                 decimal totalProfit = 0;
@@ -901,13 +903,111 @@ namespace DDL_CapstoneProject.Respository
         /// Get project statistic evert month in year
         /// </summary>
         /// <returns></returns>
-        //public List<AdminProjectStatisticDTO> AdminProjectStatistic()
-        //{
-        //    using (var db = new DDLDataContext())
-        //    {
+        public AdminProjectStatisticDTO AdminProjectStatistic()
+        {
+            using (var db = new DDLDataContext())
+            {
+                var projects = db.Projects.ToList();
 
-        //    }
-        //}
+                foreach (var project in projects)
+                {
+                    project.CreatedDate = CommonUtils.ConvertDateTimeFromUtc(project.CreatedDate);
+                    project.ExpireDate = CommonUtils.ConvertDateTimeFromUtc(project.CreatedDate);
+                }
+
+                // Caculate created project
+                var createdProject = projects.Where(x => x.CreatedDate.Year == 2015)
+                  .GroupBy(x => new { x.CreatedDate.Month })
+                  .Select(grp => new
+                  {
+                      Month = grp.Key.Month,
+                      Total = grp.Count()
+                  });
+
+                var listCreated = new List<Statistic>();
+
+                foreach (var project in createdProject)
+                {
+                    var sum = new Statistic
+                    {
+                        Amount = project.Total,
+                        Month = project.Month
+                    };
+                    listCreated.Add(sum);
+                }
+
+                // Caculate Success project
+                var successProject = projects.Where(x => x.ExpireDate.Value.Year == 2015 && x.IsFunded && x.IsExprired)
+                  .GroupBy(x => new { x.ExpireDate.Value.Month })
+                  .Select(grp => new
+                  {
+                      Month = grp.Key.Month,
+                      Total = grp.Count(),
+                  });
+
+                var listSuccess = new List<Statistic>();
+
+                foreach (var project in successProject)
+                {
+                    var sum = new Statistic
+                    {
+                        Amount = project.Total,
+                        Month = project.Month
+                    };
+                    listSuccess.Add(sum);
+                }
+
+                // Caculate fail project
+                var failProject = projects.Where(x => x.ExpireDate.Value.Year == 2015 && x.IsFunded == false && x.IsExprired)
+                  .GroupBy(x => new { x.ExpireDate.Value.Month })
+                  .Select(grp => new
+                  {
+                      Month = grp.Key.Month,
+                      Total = grp.Count()
+                  });
+
+                var listFail = new List<Statistic>();
+
+                foreach (var project in failProject)
+                {
+                    var sum = new Statistic
+                    {
+                        Amount = project.Total,
+                        Month = project.Month
+                    };
+                    listFail.Add(sum);
+                }
+
+                // Caculate total funded
+                var pledge = db.Backings.Where(x => x.BackedDate.Year == 2015)
+                    .GroupBy(x => new { x.BackedDate.Month })
+                   .Select(g => new
+                   {
+                       Month = g.Key.Month,
+                       Total = g.Sum(i => i.BackingDetail.PledgedAmount)
+                   });
+                var listFunded = new List<Statistic>();
+                foreach (var amount in pledge)
+                {
+                    var sum = new Statistic
+                    {
+                        Amount = amount.Total,
+                        Month = amount.Month
+                    };
+                    listFunded.Add(sum);
+                }
+
+                var list = new AdminProjectStatisticDTO
+                {
+                    Created = listCreated,
+                    Succeed = listSuccess,
+                    Fail = listFail,
+                    Funded = listFunded
+                };
+
+                return list;
+            }
+        }
         #endregion
 
 
@@ -1322,18 +1422,18 @@ namespace DDL_CapstoneProject.Respository
                 var project = db.Projects.FirstOrDefault(x => x.ProjectCode == projectCode);
 
                 var list = new BackingDTO();
+                // Get linq.
                 var listBackerLinQ = from backer in db.Backings
                                      where project.ProjectID == backer.ProjectID
+                                     orderby backer.BackedDate descending
                                      select new BackerDTO
                                      {
                                          Amount = backer.BackingDetail.PledgedAmount,
-                                         Date = backer.BackedDate,
+                                         Date = SqlFunctions.DateAdd("hh", 7, backer.BackedDate),
                                          FullName = backer.User.UserInfo.FullName,
                                      };
-                foreach (var backer in listBackerLinQ)
-                {
-                    backer.Date = CommonUtils.ConvertDateTimeFromUtc(backer.Date.GetValueOrDefault());
-                }
+
+                // Create chart.
                 var query = listBackerLinQ.Where(x => x.Date.HasValue)
                   .GroupBy(x => new { x.Date.Value.Day, x.Date.Value.Month })
                   .Select(grp => new
@@ -1341,24 +1441,30 @@ namespace DDL_CapstoneProject.Respository
                       Day = grp.Key.Day,
                       Month = grp.Key.Month,
                       Total = grp.Sum(x => x.Amount)
-                  });
+                  }).ToList();
                 var listAmount = new List<SumAmount>();
 
-                foreach (var amount in query)
+                decimal total = 0;
+                for (var i = 0; i < query.Count; i++)
                 {
+                    total += query[i].Total;
                     var sum = new SumAmount
                     {
-                        Amount = amount.Total,
-                        Day = amount.Day,
-                        Month = amount.Month
+                        Amount = total,
+                        Day = query[i].Day,
+                        Month = query[i].Month
                     };
                     listAmount.Add(sum);
                 }
-               var listBacker = new List<BackerDTO>();
-                foreach (var backer in listBackerLinQ)
-                {
-                    listBacker.Add(backer);
-                }
+
+                // Create table.
+                var listBacker = listBackerLinQ.ToList();
+
+                //foreach (var backer in listBackerLinQ)
+                //{
+                //    backer.Date = CommonUtils.ConvertDateTimeFromUtc(backer.Date.GetValueOrDefault());
+                //    listBacker.Add(backer);
+                //}
                 list.sumAmount = listAmount;
                 list.listBacker = listBacker;
                 list.Amount = new List<decimal>();
