@@ -165,10 +165,10 @@
                                         <p class="title">Thời hạn</p>
                                     </div>
                                     <div class="col-md-8">
-                                        @*<div class="form-inline">
-                                                <label for="startdate" class="fnt20">Start:</label>
-                                                <input type='date' class="form-control" style="line-height: 15px" />
-                                            </div>*@
+										@*<div class="form-inline">
+                                            <label for="startdate" class="fnt20">Start:</label>
+                                            <input type='date' class="form-control" style="line-height: 15px" />
+                                        </div>*@
                                         <div class="form-inline">
                                             <label for="enddate" class="fnt20">End:</label>
                                             <input type='date' ng-model="Project.ExpireDate" name="ProjectDeadLine" id="ProjectDeadLine"
@@ -472,10 +472,10 @@
                                                                 <div class="col-md-4" ng-if="NewReward.Type == 'limited'">
                                                                     <input type="number" class="form-control" min="1" value="1" name="newQuantity" ng-model="NewReward.Quantity">
                                                                     @*<span class="glyphicon glyphicon-ok text-success form-control-feedback" ng-show="CreateRewardForm.newQuantity.$dirty && CreateRewardForm.newQuantity.$valid"></span>
-                                                                        <div ng-show="CreateRewardForm.newQuantity.$dirty && CreateRewardForm.newQuantity.$invalid" class="text-danger">
-                                                                                <span class="glyphicon glyphicon-remove text-danger"></span>
-                                                                                <span ng-show="CreateRewardForm.newQuantity.$invalid">Số lượng phải là chữ số và lớn hơn 0!</span>
-                                                                            </div>*@
+                                                                    <div ng-show="CreateRewardForm.newQuantity.$dirty && CreateRewardForm.newQuantity.$invalid" class="text-danger">
+                                                                            <span class="glyphicon glyphicon-remove text-danger"></span>
+                                                                            <span ng-show="CreateRewardForm.newQuantity.$invalid">Số lượng phải là chữ số và lớn hơn 0!</span>
+                                                                        </div>*@
                                                                     <p>Số lượng phải lớn hơn 0.</p>
                                                                 </div>
                                                             </div> <!-- end Backer -->
@@ -976,7 +976,7 @@
             </div> <!-- end QUESTION AND ANSWER -->
             @* begin tab timeline *@
             <div id="timelineTab" role="tabpanel" class="tab-pane fade in border-main">
-                <div class="pt30">
+                <div>
                     <h4 class="text-center">Lịch trình dự án</h4>
                     <h5 class="text-center">Đây là thời gian cam kết hoàn thành tiến độ dự án</h5>
                 </div> <!-- end-title -->
