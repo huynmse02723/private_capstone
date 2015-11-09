@@ -767,7 +767,7 @@ namespace DDL_CapstoneProject.Respository
         /// </summary>
         /// <param name="project"></param>
         /// <returns>bool</returns>
-        public bool AdminChangeProjectStatus(ProjectEditDTO project)
+        public bool AdminChangeProjectStatus(ProjectEditDTO project, string senderName)
         {
             using (var db = new DDLDataContext())
             {
@@ -779,6 +779,43 @@ namespace DDL_CapstoneProject.Respository
                 }
 
                 updateProject.Status = project.Status;
+
+
+                var projectOwner = db.DDL_Users.SingleOrDefault(x => x.DDL_UserID == updateProject.CreatorID);
+
+                if (projectOwner == null)
+                {
+                    throw new KeyNotFoundException();
+                }
+
+                string type = string.Empty;
+                if (updateProject.Status == DDLConstants.ProjectStatus.SUSPENDED)
+                {
+                    type = "ngừng";
+                }
+                if (updateProject.Status == DDLConstants.ProjectStatus.APPROVED)
+                {
+                    type = "duyệt thành công";
+                }
+                if (updateProject.Status == DDLConstants.ProjectStatus.REJECTED)
+                {
+                    type = "từ chối";
+                }
+
+                // Send email to project owner
+                MailHelper.Instance.SendMailChangeProjectStatus(projectOwner.Email, projectOwner.UserInfo.FullName, type, updateProject.Title);
+
+                // Send message to project owner
+                var message = new NewMessageDTO
+                {
+                    Title = "Dandelion - " + type + " dự án " + updateProject.Title + "!",
+                    ToUser = projectOwner.Username,
+                    Content = "Xin chào " + projectOwner.UserInfo.FullName + "," +
+                            "<br/>Chúng tôi vừa " + type + " dự án " + updateProject.Title + " của bạn." +
+                            "<br/>Để biết thêm chi tiết xin liện hệ với admin qua email" +
+                            "<br/>ngocmanh1712@gmail.com"
+                };
+                MessageRepository.Instance.CreateNewConversation(message, senderName);
 
                 db.SaveChanges();
 
@@ -1249,9 +1286,12 @@ namespace DDL_CapstoneProject.Respository
                     throw new KeyNotFoundException();
                 }
                 var userCurrent = db.DDL_Users.FirstOrDefault(x => x.Username == userName);
+                var temp = userCurrent != null ? userCurrent.Username : "";
                 // Create Project query from dB.
                 var projectDetail = (from project in db.Projects
                                      where project.ProjectCode.Equals(projectCode.ToUpper())
+                                     && ((project.Status != DDLConstants.ProjectStatus.DRAFT && project.Status != DDLConstants.ProjectStatus.PENDING)
+                                        || project.Creator.Username.Equals(temp, StringComparison.OrdinalIgnoreCase))
                                      select new ProjectDetailDTO
                                      {
                                          CategoryID = project.CategoryID,
@@ -1665,7 +1705,7 @@ namespace DDL_CapstoneProject.Respository
                                          FullName = backer.User.UserInfo.FullName,
                                      };
                 // Generate all date from created date 1 days to now
-                var dateMonths = Enumerable.Range(0, 1 + CommonUtils.DateTimeNowGMT7().Subtract(project.CreatedDate.AddDays(-1)).Days)
+                var dateMonths = Enumerable.Range(0, 1 + CommonUtils.DateTimeNowGMT7().Date.Subtract(project.CreatedDate.AddDays(-1).Date).Days)
                     .Select(offset =>
                     {
                         var date = project.CreatedDate.AddDays(-1).AddDays(offset); return new { Year = date.Year, Month = date.Month, Day = date.Day };
