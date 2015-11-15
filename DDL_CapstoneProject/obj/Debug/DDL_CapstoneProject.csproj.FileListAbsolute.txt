@@ -40,3 +40,4 @@ D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DD
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.csproj.GenerateResource.Cache
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.dll
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.pdb
+D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.Migrations.UpdateBackingBackerName.resources
