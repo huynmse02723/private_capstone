@@ -95,7 +95,7 @@ namespace DDL_CapstoneProject.Respository
         public List<ProjectBasicViewDTO> GetProjectTop(String categoryid)
         {
             categoryid = "|" + categoryid + "|";
-            return GetProject(10, 0, categoryid, "CurrentFunded", "", "", "true|false", "true");
+            return GetProject(10, 0, categoryid, "CurrentFunded", "", "", "", "true");
         }
 
         public int SearchCount(string categoryidlist, string searchkey, string statusString)
@@ -123,13 +123,13 @@ namespace DDL_CapstoneProject.Respository
                 }
                 if (status == null) status = "";
                 if (isFunded == null) isFunded = "";
-                Debug.WriteLine(isExprired);
+                if (isExprired == null) isExprired = "";
 
                 var ProjectList = from project in db.Projects
                                   where
                                       (categoryidList.ToLower().Contains("all") ||
                                        categoryidList.Contains("|" + project.CategoryID + "|"))
-                                      && isExprired.Contains(project.IsExprired + "") && project.Title.Contains(pathofprojectname)
+                                      && (project.IsExprired + "").Contains(isExprired) && project.Title.Contains(pathofprojectname)
                                       && project.Status.Contains(status) && project.IsFunded.ToString().ToLower().Contains(isFunded)
                                       && !project.Status.Equals(DDLConstants.ProjectStatus.DRAFT) && !project.Status.Equals(DDLConstants.ProjectStatus.REJECTED)
                                       && !project.Status.Equals(DDLConstants.ProjectStatus.SUSPENDED) && !project.Status.Equals(DDLConstants.ProjectStatus.PENDING)
@@ -652,7 +652,7 @@ namespace DDL_CapstoneProject.Respository
         /// </summary>
         /// <param name="backingData"></param>
         /// <returns>projectCode</returns>
-        public string BackProject(ProjectBackDTO backingData)
+        public int BackProject(ProjectBackDTO backingData)
         {
             using (var db = new DDLDataContext())
             {
@@ -716,7 +716,7 @@ namespace DDL_CapstoneProject.Respository
 
                 db.SaveChanges();
 
-                return backing.BackingDetail.OrderId;
+                return backing.BackingID;
             }
         }
 
@@ -747,21 +747,21 @@ namespace DDL_CapstoneProject.Respository
         /// </summary>
         /// <param name="backingId"></param>
         /// <returns></returns>
-        public ProjectBackDTO GetBackingDetail(string order_id, string username)
+        public ProjectBackDTO GetBackingDetail(int backingId, string username)
         {
             using (var db = new DDLDataContext())
             {
-                var backing = db.BackingDetails.SingleOrDefault(x => x.OrderId == order_id);
+                var backing = db.BackingDetails.SingleOrDefault(x => x.BackingID == backingId);
 
                 if (backing == null)
                 {
                     throw new KeyNotFoundException();
                 }
 
-                if (backing.Backing.User.Username != username)
-                {
-                    throw new NotPermissionException();
-                }
+                //if (backing.Backing.User.Username != username)
+                //{
+                //    throw new NotPermissionException();
+                //}
 
                 backing.Backing.BackedDate = CommonUtils.ConvertDateTimeFromUtc(backing.Backing.BackedDate);
 
@@ -1095,7 +1095,7 @@ namespace DDL_CapstoneProject.Respository
             {
                 // Get rewardPkg list
                 var projectList = (from Project in db.Projects
-                                   where Project.Status == DDLConstants.ProjectStatus.EXPIRED && Project.IsFunded
+                                   where Project.IsExprired && Project.IsFunded
                                    select new ProjectBasicListDTO
                                    {
                                        ProjectCode = Project.ProjectCode,
@@ -1105,6 +1105,8 @@ namespace DDL_CapstoneProject.Respository
                                        FundingGoal = Project.FundingGoal,
                                        Status = Project.Status,
                                        CurrentFunded = Project.CurrentFunded,
+                                       CreatorFullname = Project.Creator.UserInfo.FullName,
+                                       CreatorUsername = Project.Creator.Username
                                    }).ToList();
 
                 projectList = projectList.OrderByDescending(x => x.CurrentFunded).Take(5).ToList();
@@ -2301,6 +2303,7 @@ namespace DDL_CapstoneProject.Respository
                 //    db.RewardPkgs.Where(x => x.ProjectID == projectDetail.ProjectID && !x.IsHide).ToList();
                 var rewardDto = (from reward in db.RewardPkgs
                                  where reward.ProjectID == projectDetail.ProjectID && !reward.IsHide
+                                 orderby reward.PledgeAmount
                                  select new RewardPkgDTO
                                  {
                                      Backers = reward.BackingDetails.Count,
@@ -2404,7 +2407,8 @@ namespace DDL_CapstoneProject.Respository
                                     Title = project.Title,
                                     CurrentFunded = backing.BackingDetail.PledgedAmount,
                                     BackedDate = backing.BackedDate,
-                                    Status = project.Status
+                                    Status = project.Status,
+                                    BackingId = backing.BackingID
                                 }).OrderByDescending(x => x.BackedDate).ToList();
                 return Project;
             }
