@@ -472,7 +472,7 @@ namespace DDL_CapstoneProject.Respository
 
 
         //UserEditInfoDTO
-        public void EditUserInfo(UserEditInfoDTO userCurrent, string uploadImageName)
+        public UserEditInfoDTO EditUserInfo(UserEditInfoDTO userCurrent, string uploadImageName)
         {
             using (var db = new DDLDataContext())
             {
@@ -495,6 +495,9 @@ namespace DDL_CapstoneProject.Respository
                 }
 
                 db.SaveChanges();
+
+                userCurrent.ProfileImage = uploadImageName;
+                return userCurrent;
             }
         }
 
@@ -1009,7 +1012,8 @@ namespace DDL_CapstoneProject.Respository
                                       RewardContent = backing.BackingDetail.RewardPkg.Description,
                                       RewardPledgeAmount = backing.BackingDetail.RewardPkg.PledgeAmount,
                                       UserName = backing.User.Username,
-                                      BackingID = backing.BackingID
+                                      BackingID = backing.BackingID,
+                                      ProjectCode = backing.Project.ProjectCode
                                   }).ToList();
 
                 listReturn.ForEach(x => x.BackedDate = CommonUtils.ConvertDateTimeFromUtc(x.BackedDate.GetValueOrDefault()));
