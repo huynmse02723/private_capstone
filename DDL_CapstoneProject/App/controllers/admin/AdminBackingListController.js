@@ -5,7 +5,6 @@ app.controller('AdminBackingListController',
         DTOptionsBuilder, DTColumnDefBuilder) {
         //Todo here.
 
-
         $scope.exportExcel = function () {
 
             var list = [];
@@ -29,7 +28,7 @@ app.controller('AdminBackingListController',
                             'Email',
                             'Địa chỉ',
                             'SĐT']);
-                        CommmonService.exportExcel(list, "Backing");
+                        CommmonService.exportExcel(list, "Danh sách ủng hộ - Quản trị viên");
                     } else {
                         CommmonService.checkError(result.data.Type, $rootScope.BaseUrl);
                         $scope.Error = result.data.Message;
@@ -56,7 +55,7 @@ app.controller('AdminBackingListController',
         $scope.dtOptions = DTOptionsBuilder.newOptions()
         .withDisplayLength(10)
         .withOption('order', [4, 'desc'])
-        .withOption('stateSave', true)
+        //.withOption('stateSave', true)
         .withBootstrap();
 
         $scope.dtColumnDefs = [

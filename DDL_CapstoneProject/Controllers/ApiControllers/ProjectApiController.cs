@@ -976,7 +976,7 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
                     return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
                 }
 
-                backingData.OrderId = backingData.ProjectCode + CommonUtils.GenerateVerifyCode() + DateTime.Now.ToString("hmmsstt");
+                backingData.OrderId = int.Parse(backingData.ProjectCode.Substring(3,6)) + CommonUtils.GenerateVerifyCode().Substring(0,10) + DateTime.Now.ToString("hmmsstt");
                 backingData.TransactionId = CommonUtils.GenerateVerifyCode().Substring(0, 13);
                 backingData.BackedDate = DateTime.Now;
 
@@ -1523,6 +1523,38 @@ namespace DDL_CapstoneProject.Controllers.ApiControllers
 
 
         #region TrungVN
+
+        // GET: api/ProjectApi/AdminGetProjectDetail/:code
+        [HttpGet]
+        public IHttpActionResult AdminGetAllProjectDetail()
+        {
+            var project = new List<ProjectExportDTO>();
+
+            try
+            {
+                // Check authen.
+                if (User.Identity == null || !User.Identity.IsAuthenticated)
+                {
+                    return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.NOT_AUTHEN });
+                }
+
+                // Check role user.
+                var currentUser = UserRepository.Instance.GetBasicInfo(User.Identity.Name);
+                if (currentUser == null || currentUser.Role != DDLConstants.UserType.ADMIN)
+                {
+                    throw new NotPermissionException();
+                }
+
+                project = ProjectRepository.Instance.AdminGetAllProjectDetail();
+            }
+            catch (Exception)
+            {
+
+                return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.ERROR, Message = "", Type = DDLConstants.HttpMessageType.BAD_REQUEST });
+            }
+
+            return Ok(new HttpMessageDTO { Status = DDLConstants.HttpMessageType.SUCCESS, Data = project });
+        }
         [HttpGet]
         public IHttpActionResult SearchCount(string categoryidlist, string searchkey, string statusString)
         {

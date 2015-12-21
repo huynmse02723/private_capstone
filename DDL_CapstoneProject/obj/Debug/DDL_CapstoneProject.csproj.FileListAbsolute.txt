@@ -42,3 +42,4 @@ D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DD
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.pdb
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.Migrations.UpdateProjectPoint.resources
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.Migrations.UpdateBackingDetail.resources
+D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.csprojResolveAssemblyReference.cache

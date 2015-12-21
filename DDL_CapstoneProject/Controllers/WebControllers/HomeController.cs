@@ -52,7 +52,7 @@ namespace DDL_CapstoneProject.Controllers.WebControllers
                 var randomCode = CommonUtils.GenerateVerifyCode().Substring(0, 10);
                 string totalPledge = backingData.PledgeAmount.ToString();
                 var paymentUrl = bk.createRequestUrl(
-                    backingData.ProjectCode + randomCode + DateTime.Now.ToString("hmmsstt"),
+                    int.Parse(backingData.ProjectCode.Substring(3,6)) + randomCode + DateTime.Now.ToString("hmmsstt"),
                     "ngocmanh1712@gmail.com",
                      totalPledge,
                     "0",

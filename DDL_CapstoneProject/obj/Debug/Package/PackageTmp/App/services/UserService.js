@@ -7,6 +7,13 @@ service.service('UserService', function ($http) {
     this.getUserTop = function (categoryID) {
         return $http.get("/api/UserApi/GetUserTop?categoryID=" + categoryID);
     }
+    this.GetBackingForUserExport = function () {
+        var request = $http({
+            method: 'get',
+            url: '../api/UserApi/GetBackingForUserExport',
+        });
+        return request;
+    }
 
     //End TrungVN
 
@@ -17,6 +24,26 @@ service.service('UserService', function ($http) {
             method: 'post',
             url: '/api/UserApi/Register',
             data: newUser
+        });
+
+        return request;
+    }
+
+    // Function to send code change pass
+    this.sendCodeChangePassword = function (email) {
+        var request = $http({
+            method: 'post',
+            url: '/api/UserApi/SendCodeChangePassword?email=' + email,
+        });
+
+        return request;
+    }
+
+    // Function to check verify code
+    this.checkCodeVerify = function (email, code) {
+        var request = $http({
+            method: 'post',
+            url: '/api/UserApi/CheckCodeVerify?username=' + email + '&code=' + code
         });
 
         return request;
@@ -114,6 +141,15 @@ service.service('UserService', function ($http) {
         var request = $http({
             method: 'post',
             url: '/api/UserApi/ChangePassword',
+            data: newpass
+        });
+        return request;
+    }
+
+    this.setNewPass = function (newpass) {
+        var request = $http({
+            method: 'post',
+            url: '/api/UserApi/SetPassword',
             data: newpass
         });
         return request;
