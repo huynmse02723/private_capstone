@@ -53,7 +53,7 @@ namespace DDL_CapstoneProject.Controllers.WebControllers
                 string totalPledge = backingData.PledgeAmount.ToString();
                 var paymentUrl = bk.createRequestUrl(
                     backingData.ProjectCode + randomCode + DateTime.Now.ToString("hmmsstt"),
-                    "dev.baokim@bk.vn",
+                    "ngocmanh1712@gmail.com",
                      totalPledge,
                     "0",
                     "0",
