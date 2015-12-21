@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<sitemanifest>
+  <IisApp path="D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\Package\PackageTmp" managedRuntimeVersion="v4.0" />
+  <setAcl path="D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\Package\PackageTmp" setAclResourceType="Directory" />
+  <setAcl path="D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\Package\PackageTmp" setAclUser="anonymousAuthenticationUser" setAclResourceType="Directory" />
+</sitemanifest>

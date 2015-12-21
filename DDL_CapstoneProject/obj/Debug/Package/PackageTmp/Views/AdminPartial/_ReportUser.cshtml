@@ -1,0 +1,122 @@
+﻿<div class="row">
+    <div class="col-lg-12">
+
+        <div class="portlet portlet-default">
+            <div class="portlet-heading">
+                <div class="portlet-title">
+                    <h4>Danh sách người dùng bị báo vi phạm</h4>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+            <div class="portlet-body">
+                <div class="table-responsive">
+                    <table id="example-table" class="table table-striped table-bordered table-hover table-green" datatable="ng" dt-options="dtOptions" dt-column-defs="dtColumnDefs">
+                        <thead>
+                            <tr>
+                                <th style="width: 15px">#</th>
+                                <th>Người báo cáo</th>
+                                <th>Người vi phạm</th>
+                                @*<th>Lý do</th>*@
+                                <th>Ngày báo</th>
+                                <th style="width: 72px">Trạng thái</th>
+                                <th style="width: 107px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="report in listReport track by $index" ng-class-odd="'odd'" ng-class-even="'even'">
+                                <td class="col-number">{{$index + 1}}</td>
+                                <td><a href="/admin/#/userprofile/{{report.ReporterUsername}}">{{report.ReporterFullname}}</a></td>
+                                <td><a href="/admin/#/userprofile/{{report.ReportedUsername}}">{{report.ReportedFullname}}</a></td>
+                                @*<td>{{report.Subject}}</td>*@
+                                <td class="col-datetime" data-order="{{report.ReportedDate}}">{{report.ReportedDate | date : "dd/MM/yyyy"}}</td>
+                                <td>
+                                    <span style="padding: 9px 10px" class="label label-default center-block" ng-if="report.Status != 'rejected' && report.Status != 'done' && report.Status != 'viewed'">Chưa xem</span>
+                                    <span style="padding: 9px 10px" class="label label-primary  center-block" ng-if="report.Status == 'viewed'">Đã xem</span>
+                                    <span style="padding: 9px 10px" class="label label-success center-block" ng-if="report.Status == 'done'">Đã xác nhận</span>
+                                    <span style="padding: 9px 10px" class="label label-danger center-block" ng-if="report.Status == 'rejected'">Đã Hủy</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-primary btn-sm" type="button" tooltip="Chi tiết" tooltip-append-to-body="true" tooltip-placement="left"
+                                                ng-click="loadReportContent(report.ReportID)" data-toggle="modal" data-target="#viewMessageModal">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-success btn-sm" type="button" tooltip="Xác nhận" tooltip-append-to-body="true" tooltip-placement="left"
+                                                ng-click="changeReportUserStatus(report.ReportID,'done')" ng-if="report.Status != 'rejected' && report.Status != 'done' ">
+                                            <i class="fa fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-primary btn-sm btn-red" type="button" tooltip="Hủy" tooltip-append-to-body="true" tooltip-placement="left"
+                                                ng-click="changeReportUserStatus(report.ReportID,'rejected')" ng-if="report.Status != 'rejected' && report.Status != 'done' ">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.table-responsive -->
+            </div>
+            <!-- /.portlet-body -->
+        </div>
+        <!-- /.portlet -->
+
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+
+
+<!-- Ask question -->
+<div class="modal modal-flex fade" id="reply" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h5 class="modal-title" id="myModalLabel">{{newReply.Title}}</h5>
+            </div>
+            <div class="modal-body">
+                <h5 class="fnt20"><span class="fnt-n">Tới: {{reportContent.ReporterFullname}}({{newReply.ToUser}})</span> </h5>
+                <h5 class="fnt20 fnt-n">Nội dung:</h5>
+                <textarea class="form-control" style="resize: none" name="" id="" cols="30" rows="5"
+                          ng-model="newReply.Content"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-info" ng-click="sendReply()" data-dismiss="modal">Trả lời</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end question modal -->
+<!-- Flex Modal -->
+<div class="modal modal-flex fade" id="viewMessageModal" tabindex="-1" role="dialog" aria-labelledby="flexModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form role="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h4 class="modal-title" id="flexModalLabel">
+                       Thông tin báo vi phạm
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="exampleInputEmail1">Từ:</label> <span>{{reportContent.ReporterFullname}}</span>
+                    </div>
+                    @*<div class="form-group">
+                    <label for="exampleInputEmail1">Subject:</label> <span>{{reportContent.Subject}}</span>
+                </div>*@
+                    <div class="form-group">
+                        <label for="exampleInputPassword1">Nội dung:</label>
+                        <textarea readonly class="form-control" id="exampleInputPassword1"
+                                  rows="6" cols="50" maxlength="300" style="resize: none">{{reportContent.ReportContent}}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Đóng</button> <button type="button" class="btn btn-green" data-dismiss="modal" data-toggle="modal" data-target="#reply">Trả lời</button>
+                </div>
+            </form>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->

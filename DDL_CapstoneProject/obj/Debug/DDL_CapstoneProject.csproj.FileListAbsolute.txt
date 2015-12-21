@@ -33,7 +33,6 @@ D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\bin\Newtonso
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\bin\System.Net.Http.Formatting.xml
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\bin\System.Web.Http.xml
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\bin\System.Web.Http.WebHost.xml
-D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.csprojResolveAssemblyReference.cache
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.Migrations.InitialCreate.resources
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.Migrations.UpdateBackingBackingDetail.resources
 D:\2015FALLJS01\WIP\Sources\DDL_CapstoneProject\DDL_CapstoneProject\obj\Debug\DDL_CapstoneProject.Migrations.CurrentQuantity.resources

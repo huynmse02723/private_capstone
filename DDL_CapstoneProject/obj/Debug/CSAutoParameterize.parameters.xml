@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<parameters>
+  <parameter name="DDLDataContext-Web.config Connection String" description="DDLDataContext Connection String used in web.config by the application to access the database." defaultValue="Server=tcp:rmvknlgt97.database.windows.net,1433;Database=DDL_CapstoneProjectDB2;User ID=manhmaluc@rmvknlgt97;Password=12345678@a;Trusted_Connection=False;Encrypt=True;Connection Timeout=30;" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="D:\\2015FALLJS01\\WIP\\Sources\\DDL_CapstoneProject\\DDL_CapstoneProject\\obj\\Debug\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='DDLDataContext']/@connectionString" />
+  </parameter>
+</parameters>

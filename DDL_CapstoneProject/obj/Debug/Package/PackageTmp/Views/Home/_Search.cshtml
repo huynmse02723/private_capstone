@@ -1,0 +1,127 @@
+﻿<div id="content" class="paddingNavbar">
+    <div id="search">
+
+        <div class="searchbar">
+            <div class="container">
+                <form ng-submit="Search(selectcategory,selectedorder,searchkey,selectstatus)">
+                    <div class="control-group form-inline pt20 pb20">
+                        <group ng-if="isAdvance" style="display: inline-block">
+                            <lable class="control-label fnt30 fnt-b">Tìm kiếm </lable>
+                            <input ng-model="$parent.searchkey" type="text" class="form-control" placeholder="dandelion..." value="Dandelion" ng-enter="Search(selectcategory,selectedorder,searchkey,selectstatus)" />
+
+                        </group>
+                        <group style="display: inline-block">
+                            <lable class="control-label fnt30 fnt-b"><span ng-if="!isAdvance">Hiển thị </span><span ng-if="isAdvance">trong </span>các dự án </lable>
+                            <ui-select class="fnt20 pr15" multiple ng-model="$parent.selectcategory" theme="bootstrap" ng-disabled="disabled" close-on-select="false"
+                                       title="Choose a category" ng-change="Search(selectcategory,selectedorder,searchkey,selectstatus)" style="min-width:200px">
+                                <ui-select-match placeholder="Choose a category...">{{$item.Name}}</ui-select-match>
+                                <ui-select-choices repeat="cat in categoryList | highlight: $select.search">
+                                    {{cat.Name}}
+                                </ui-select-choices>
+                            </ui-select>
+                        </group>
+                        <group style="display: inline-block">
+                            <lable class="control-label fnt30 fnt-b"> sắp xếp theo </lable>
+                            <ui-select ng-model="selectedorder" ng-change="Search(selectcategory,selectedorder,searchkey,selectstatus)" class="fnt20" theme="bootstrap"
+                                       style="display: inline-block; min-width:200px" ng-disabled="disabled">
+                                <ui-select-match placeholder="Sắp xếp theo...">{{$select.selected.Label}}</ui-select-match>
+                                <ui-select-choices repeat="sort.type as sort in SortList | filter: $select.search">
+                                    {{sort.Label}}
+                                </ui-select-choices>
+                            </ui-select>
+                        </group>
+                        <group style="display: inline-block">
+                            <lable class="control-label fnt30 fnt-b"> trạng thái </lable>
+                            <ui-select ng-model="selectstatus" ng-change="Search(selectcategory,selectedorder,searchkey,selectstatus)" class="fnt20" theme="bootstrap"
+                                       style="display: inline-block; min-width:200px" ng-disabled="disabled">
+                                <ui-select-match placeholder="Sắp xếp theo...">{{$select.selected.Label}}</ui-select-match>
+                                <ui-select-choices repeat="stt.isExpried as stt in statuss | filter: $select.search">
+                                    {{stt.Label}}
+                                </ui-select-choices>
+                            </ui-select>
+                        </group>
+                    </div>
+                </form>
+            </div>
+
+
+            <div id="item-search" class="pt30 pb30">
+                <section id="portfolio" class="container">
+                    <div class="explore">
+                        <span class="fnt25" ng-if="noti">không tìm thấy dự án nào.</span>
+                        <span class="fnt25" ng-if="!noti">Có {{projectResultListSize}} dự án.</span>
+                    </div>
+                    <ul class="portfolio-items col-4">
+                        <li class="portfolio-item" ng-repeat="project in projectbycategory">
+                            <div class="item-inner">
+                                <div class="item-image hover01 column">
+                                    <a href="/#/project/detail/{{project.ProjectCode}}"><figure><img class="img-fit" ng-src="\images\projects\{{project.ImageUrl}}" alt=""></figure></a>
+                                </div>
+                                <div class="item-title">
+                                    <h5><a href="/#/project/detail/{{project.ProjectCode}}">{{project.Title}}</a></h5>
+                                </div>
+                                <div class="item-content">
+                                    <p class="fnt15">{{project.SubDescription}}</p>
+                                </div>
+                                <div class="item-footer">
+                                    <div class="mt10 mb5 no-wrap text-hidden">
+                                        @*<a class="grey-dark" href=""><span class="glyphicon glyphicon-map-marker" aria-hidden="true">&nbsp;</span>{{project.Location}}</a>
+                                            &nbsp;&nbsp;*@
+                                        <a class="grey-dark" href="@Url.Content("/#/search?categoryid={{project.CategoryID}}")"><span class="glyphicon glyphicon-tags" aria-hidden="true">&nbsp;</span>{{project.Category}}</a>
+                                        &nbsp;&nbsp;
+                                        <span class="grey-dark"><span class="glyphicon glyphicon-map-marker" aria-hidden="true"></span>{{project.Location}}</span>
+                                    </div>
+                                    <div class="progress mt5 mb5" ng-if="project.ExpireDate >= 0 || project.CurrentFunded >= 100">
+                                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuenow="{{project.CurrentFunded}}" aria-valuemax="100" style="width: {{project.CurrentFunded}}% ">
+                                            <span class="sr-only">{{project.CurrentFunded}}% Complete (success)</span>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt5 mb5" ng-if="project.ExpireDate < 0 && project.CurrentFunded < 100">
+                                        <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuemin="0" aria-valuenow="{{project.CurrentFunded}}" aria-valuemax="100" style="width: {{project.CurrentFunded}}%">
+                                            <span class="sr-only">{{project.CurrentFunded}}% Complete (success)</span>
+                                        </div>
+                                    </div>
+                                    <ul class="list-inline fnt15">
+                                        <li>
+                                            <span class="fnt-b mt0 mb0 c00">{{project.CurrentFundedNumber| number : fractionSize}}&#8363;({{project.CurrentFunded}}%)</span>
+                                            <span class="mt0 mb0">đã được gây quỹ</span>
+                                        </li>
+                                        @*<li>
+                                                <span class="fnt-b mt0 mb0 c00">{{project.CurrentFunded}}%</span>
+                                                <span class="mt0 mb0">đã ủng hộ</span>
+                                            </li>*@
+                                    </ul>
+                                    <ul class="list-inline fnt15">
+                                        <li ng-if="project.ExpireDate >= 0">
+                                            <span class="fnt-b mt0 mb0 c00">{{project.ExpireDate}}</span>
+                                            <span class="mt0 mb0">ngày còn lại</span>
+                                        </li>
+                                        <li ng-if="project.ExpireDate < 0">
+                                            @*<span class="fnt-b mt0 mb0 label label-danger">Đã kết thúc</span>*@
+                                            <span class="fnt-b mt0 mb0 label label-success" ng-if="project.CurrentFunded >= 100">Thành công</span>
+                                            <span class="fnt-b mt0 mb0 label label-danger" ng-if="project.CurrentFunded < 100">Thất bại</span>
+                                            @*<span class="mt0 mb0">ngày còn lại</span>*@
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </li><!--/.portfolio-item-->
+
+                    </ul>
+                    <!-- <div class="form-actions txt-c">
+                        <a class="btn btn-transparent btn-sm" href="discover.html">See more</a>
+                    </div> -->
+                </section><!--/#portfolio-->
+                <a class="btn btn-transparent btn-sm center-block" style="width: 90px" ng-if="showLoadMoreButton" ng-click="Loadmore(selectcategory,selectedorder,searchkey)" href="">Xem thêm</a>
+
+            </div> <!-- end item-popular -->
+
+
+        </div>
+
+    </div> <!-- end content -->
+</div>
+
+<script>
+    $(window).trigger('resize');
+</script>
