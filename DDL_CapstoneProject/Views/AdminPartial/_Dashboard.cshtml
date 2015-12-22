@@ -349,7 +349,7 @@
                             </thead>
                             <tbody>
                                 <tr ng-repeat="backing in RecentBacking">
-                                    <td class="col-text"><a href="@Url.Content("/admin/#/userprofile/{{backing.Username}}")">{{backing.BackerName}}</a></td>
+                                    <td class="col-text"><a href="@Url.Content("/admin/#/userprofile/{{backing.UserName}}")">{{backing.BackerName}}</a></td>
                                     <td class="col-text"><a href="@Url.Content("/admin/#/project/{{backing.ProjectCode}}")">{{backing.ProjectTitle}}</a></td>
                                     <td class="col-number">{{backing.PledgeAmount | currency:"":0}}</td>
                                     <td class="col-number">{{backing.BackedDate | date: "HH:mm 'ngày' dd-MM-yyyy"}}</td>
